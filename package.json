@@ -1,0 +1,13 @@
+{
+  "name": "movieultra-webapp",
+  "version": "1.0.0",
+  "description": "A professional movie tracking web app for managing personal library of movies, series, and anime.",
+  "main": "index.html",
+  "scripts": {
+    "start": "npx http-server . -p 8000",
+    "dev": "npx http-server . -p 8000"
+  },
+  "keywords": ["movie", "tracker", "webapp", "tmdb", "anime"],
+  "author": "manoj kumar",
+  "license": "MIT"
+}

@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>🎬 Movie Ultra v1.0.0 - Your Personal Movie Library</title>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;600;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="src/styles.css">
+
+</head>
+<body>
+
+<div class="sidebar-overlay" id="overlay" onclick="toggleSidebar()"></div>
+
+<aside class="sidebar" id="sidebar">
+  <div class="sb-header">
+    <div class="sb-logo-wrap">
+      <img src="src/logo.svg" alt="Movie Ultra Logo" class="sb-logo-img"
+           onerror="this.style.display='none'; document.getElementById('logoFallback').style.display='block';">
+      <div id="logoFallback" class="sb-logo-fallback" style="display:none">MOVIE ULTRA</div>
+      <div class="sb-version">v1.0.0</div>
+    </div>
+  </div>
+  <div class="sb-content">
+    <div class="sb-section-title">Main</div>
+    <div class="sb-item active" onclick="showView('home')"><span>🏠</span> Home</div>
+    <div class="sb-item" onclick="showView('trending')"><span>🔥</span> Trending</div>
+    <div class="sb-item" onclick="showView('movies')"><span>🎬</span> Movies</div>
+    <div class="sb-item" onclick="showView('series')"><span>📺</span> Series</div>
+    <div class="sb-item" onclick="showView('anime')"><span>🌸</span> Anime</div>
+    <div class="sb-item" onclick="showView('watchlist')"><span>⭐</span> Watchlist</div>
+    <div class="sb-item" onclick="showView('analytics')"><span>📊</span> Analytics</div>
+    <div class="sb-section-title">Data</div>
+    <div class="sb-item"><span>📥</span> Import Excel</div>
+    <div class="sb-item"><span>📤</span> Export Excel</div>
+    <div class="sb-section-title">Account</div>
+    <div class="sb-item" onclick="showView('profile')"><span>👤</span> Profile</div>
+    <div class="sb-item" onclick="showView('settings')"><span>⚙️</span> Settings</div>
+    <div class="sb-item"><span>💬</span> Feedback</div>
+    <div class="sb-item logout" onclick="alert('Logging out...')"><span>🚪</span> Logout</div>
+  </div>
+</aside>
+
+<nav>
+  <div class="menu-btn" onclick="toggleSidebar()" style="cursor:pointer; font-size:20px;">☰</div>
+  <div id="pageTitle" style="font-weight:800; font-size:18px">HOME</div>
+  <div onclick="toggleTheme()" style="cursor:pointer; font-size:20px">🌓</div>
+</nav>
+
+<div id="searchContainer">
+  <div class="search-wrapper">
+    <div class="search-box">
+      <input type="text" id="smartInput" placeholder="Add to your library...">
+      <button class="search-btn" id="searchTrigger">Add</button>
+    </div>
+  </div>
+  <div class="filter-scroll">
+    <div class="chip active" id="chip-movie" onclick="setType('movie')">Movies</div>
+    <div class="chip" id="chip-tv" onclick="setType('tv')">Series</div>
+    <div class="chip" id="chip-anime" onclick="setType('anime')">Anime</div>
+  </div>
+</div>
+
+<div class="container">
+  <section id="view-home" class="view-section active">
+    <h2 class="section-title">✨ My Library</h2>
+    <div id="libraryGrid" class="poster-grid"></div>
+  </section>
+
+  <section id="view-trending" class="view-section">
+    <h2 class="section-title">🔥 Worldwide Trending</h2>
+    <div id="trendingGrid" class="poster-grid"></div>
+  </section>
+
+  <section id="view-analytics" class="view-section">
+    <h2 class="section-title">📊 Insights</h2>
+    <div id="statsContent" style="background:var(--card-bg); padding:20px; border-radius:20px; border:1px solid var(--border)"></div>
+  </section>
+
+  <section id="view-profile" class="view-section">
+    <div style="text-align:center; padding:40px 0;">
+       <div style="width:80px; height:80px; background:var(--accent); border-radius:50%; margin:0 auto 15px; display:flex; align-items:center; justify-content:center; font-size:30px; color:white">U</div>
+       <h2 style="margin:0">User Pro</h2>
+       <p style="color:var(--text-sub)">member since 2024</p>
+       <p id="appVersion" style="color:var(--text-sub); font-size:12px;"></p>
+    </div>
+  </section>
+</div>
+
+<div class="bottom-nav">
+  <div class="b-item active" onclick="showView('home')"><span>🏠</span>Home</div>
+  <div class="b-item" onclick="showView('trending')"><span>🔥</span>Trend</div>
+  <div class="b-item" onclick="showView('watchlist')"><span>⭐</span>Saved</div>
+  <div class="b-item" onclick="showView('analytics')"><span>📊</span>Stats</div>
+  <div class="b-item" onclick="showView('profile')"><span>👤</span>Me</div>
+</div>
+
+<script src="src/config.js"></script>
+<script src="src/script.js"></script>
+</body>
+</html>

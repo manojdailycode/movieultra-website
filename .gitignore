@@ -1,0 +1,9 @@
+# Node modules
+node_modules/
+
+# Private Configuration & API Keys
+src/config.js
+
+# OS generated files
+.DS_Store
+Thumbs.db
