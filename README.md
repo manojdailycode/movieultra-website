@@ -1,40 +1,24 @@
 # 🎬 Movie Ultra
 
-> Your personal movie, series & anime tracker — built with vanilla JS + TMDB API
+Personal movie, series & anime tracking app — no login, no cloud, just yours.
 
-🔗 **Live App**: https://movieultra-webapp.vercel.app
+🔗 **Live**: https://movieultra-webapp.vercel.app
 
 ## Features
-- Search & add movies, series, anime to your library
-- Worldwide trending content
-- Watchlist to save for later
-- Analytics with library breakdown
-- Import / Export Excel
-- Dark mode (persisted)
-- Fully offline — data saved in browser
+- Add movies, series, anime to your library
+- Live worldwide trending via TMDB
+- Watchlist for saving items
+- Analytics breakdown
+- Excel import & export
+- Dark mode
 
-## Tech Stack
-HTML · CSS · Vanilla JavaScript · TMDB API · Jikan API · Vercel Serverless
+## Stack
+HTML · CSS · Vanilla JS · TMDB API · Jikan API · Vercel
 
-## Setup (Local)
-1. Clone the repo
-2. Copy `src/config.example.js` → `src/config.js`
-3. Add your TMDB key inside `src/config.js`
-4. Run: `npm start` → open `http://localhost:8000`
-
-## Project Structure
-```text
-movieultra-webapp/
-├── api/tmdb.js         ← Vercel serverless (hides TMDB key)
-├── src/
-│   ├── script.js       ← All app logic
-│   ├── styles.css      ← All styles
-│   └── logo.svg
-└── index.html
-```
-
-## Version
-v1.0.0 — Stable release
+## Run Locally
+1. `cp src/config.example.js src/config.js`
+2. Add your TMDB key in `src/config.js`
+3. `npm start` → open `http://localhost:8000`
 
 ## Author
-Manoj Kumar
+Manoj Kumar · v1.0.0
