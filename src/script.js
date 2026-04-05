@@ -3,6 +3,19 @@ let library = JSON.parse(localStorage.getItem("v4_pro_db")) || [];
 let watchlist = JSON.parse(localStorage.getItem("mu_watchlist")) || [];
 let activeType = 'movie';
 
+function showToast(msg) {
+  let toast = document.getElementById('mu-toast');
+  if (!toast) {
+    toast = document.createElement('div');
+    toast.id = 'mu-toast';
+    document.body.appendChild(toast);
+  }
+  toast.textContent = msg;
+  toast.className = 'mu-toast mu-toast-show';
+  clearTimeout(window._toastTimer);
+  window._toastTimer = setTimeout(() => toast.classList.remove('mu-toast-show'), 3000);
+}
+
 function toggleSidebar() {
   document.getElementById("sidebar").classList.toggle("active");
   document.getElementById("overlay").classList.toggle("active");
@@ -25,6 +38,17 @@ function showView(viewName) {
   target.classList.add('active');
   document.getElementById('pageTitle').innerText = viewName.toUpperCase();
   document.getElementById('searchContainer').style.display = (viewName === 'home') ? 'block' : 'none';
+
+  // Update sidebar active state
+  document.querySelectorAll('.sb-item[data-view]').forEach(el => {
+    el.classList.toggle('active', el.dataset.view === viewName);
+  });
+
+  // Update bottom nav active state
+  document.querySelectorAll('.b-item[data-view]').forEach(el => {
+    el.classList.toggle('active', el.dataset.view === viewName);
+  });
+
   if (viewName === 'trending') loadTrending();
   if (viewName === 'analytics') loadStats();
   if (viewName === 'movies') renderFiltered('movie', 'moviesGrid');
@@ -90,7 +114,7 @@ async function quickAdd(title, type) {
   if (result) {
     library.unshift(result);
     localStorage.setItem("v4_pro_db", JSON.stringify(library));
-    alert("Added to Library!");
+    showToast("Added to library ✅");
     render();
   }
 }
@@ -104,7 +128,7 @@ async function handleSearch() {
     localStorage.setItem("v4_pro_db", JSON.stringify(library));
     render();
     document.getElementById("smartInput").value = "";
-  } else { alert("Not found!"); }
+  } else { showToast("Not found — try a different title ❌"); }
 }
 
 document.getElementById("searchTrigger").addEventListener("click", handleSearch);
@@ -120,12 +144,12 @@ function addToWatchlist(idx) {
   const item = library[idx];
   const exists = watchlist.some(w => w.title === item.title && w.type === item.type);
   if (exists) {
-    alert("Already in watchlist!");
+    showToast("Already in watchlist");
     return;
   }
   watchlist.unshift(item);
   localStorage.setItem("mu_watchlist", JSON.stringify(watchlist));
-  alert("Added to Watchlist ⭐");
+  showToast("Added to Watchlist ⭐");
 }
 
 function removeFromWatchlist(idx) {
@@ -250,7 +274,7 @@ function clearLibrary() {
 }
 
 function openFeedback() {
-  alert("📧 contact.manoj.official@gmail.com\n✈️ Telegram: @Mavillamanoj");
+  showToast("📧 contact.manoj.official@gmail.com");
 }
 
 if (localStorage.getItem("mu_theme") === "dark") {
