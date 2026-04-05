@@ -9,5 +9,10 @@
   },
   "keywords": ["movie", "tracker", "webapp", "tmdb", "anime"],
   "author": "manoj kumar",
-  "license": "MIT"
+  "license": "MIT",
+  "homepage": "https://movieultra-webapp.vercel.app",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/manojdailycode/movieultra-webapp"
+  }
 }
