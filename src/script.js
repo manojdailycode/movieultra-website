@@ -243,7 +243,7 @@ function render() {
 
 function exportExcel() {
   if (!window.XLSX) {
-    alert("SheetJS not loaded");
+    showToast("SheetJS not loaded ❌");
     return;
   }
   const rows = library.map(i => ({
@@ -317,7 +317,7 @@ if (importInput) {
       renderFiltered('movie', 'moviesGrid');
       renderFiltered('tv', 'seriesGrid');
       renderFiltered('anime', 'animeGrid');
-      alert(`Imported ${added} items`);
+      showToast(`Imported ${added} items ✅`);
       e.target.value = '';
     };
     reader.readAsArrayBuffer(file);
