@@ -1,5 +1,4 @@
 const VERSION = "1.0.0";
-const TMDB_KEY = config.TMDB_KEY;
 
 // ==========================================
 // 1. STATE MANAGEMENT (Data & Storage)
@@ -29,7 +28,11 @@ const State = {
 const ApiService = {
   async getTrending() {
     try {
-      const res = await fetch(`https://api.themoviedb.org/3/trending/all/day?api_key=${TMDB_KEY}`);
+      // ✅ Goes through serverless function — TMDB key is hidden
+      const res = await fetch(`/api/tmdb?path=trending/all/day`);
+      if (!res.ok) {
+        throw new Error(`HTTP error! status: ${res.status}`);
+      }
       const data = await res.json();
       return data.results || [];
     } catch (error) {
@@ -39,16 +42,28 @@ const ApiService = {
   },
 
   async searchMedia(query, type) {
+    if (!query || !query.trim()) {
+      console.warn('Search query is empty');
+      return null;
+    }
+    
     try {
       if (type === "anime") {
         const res = await fetch(`https://api.jikan.moe/v4/anime?q=${encodeURIComponent(query)}&limit=1`);
+        if (!res.ok) {
+          throw new Error(`Jikan API error! status: ${res.status}`);
+        }
         const data = await res.json();
         if (data.data?.length > 0) {
           const a = data.data[0];
           return { title: a.title, year: a.aired?.prop?.from?.year || "N/A", rating: a.score || "N/A", poster: a.images?.jpg?.large_image_url || "", type: "anime" };
         }
       } else {
-        const res = await fetch(`https://api.themoviedb.org/3/search/${type}?api_key=${TMDB_KEY}&query=${encodeURIComponent(query)}`);
+        // ✅ Goes through serverless function — TMDB key is hidden
+        const res = await fetch(`/api/tmdb?path=search/${type}&query=${encodeURIComponent(query)}`);
+        if (!res.ok) {
+          throw new Error(`TMDB API error! status: ${res.status}`);
+        }
         const data = await res.json();
         if (data.results?.length > 0) {
           const r = data.results[0];

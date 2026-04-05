@@ -3,3 +3,7 @@
 const config = {
   TMDB_KEY: "YOUR_TMDB_API_KEY_HERE"
 };
+
+if (typeof module !== 'undefined' && module.exports) {
+  module.exports = config;
+}

@@ -163,5 +163,5 @@ nav {
 
 @media (max-width: 600px) {
   .poster-grid { grid-template-columns: repeat(2, 1fr); gap: 12px; }
-  .sidebar-w { --sidebar-w: 250px; }
+  :root { --sidebar-w: 250px; }
 }

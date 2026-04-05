@@ -3,6 +3,10 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Movie Ultra - A modern web application for tracking and managing your personal movie, series, and anime library.">
+  <meta name="keywords" content="movie tracker, tv series, anime, library, TMDB, personal collection">
+  <meta name="author" content="Manoj Kumar">
+  <meta name="theme-color" content="#3b82f6">
   <title>🎬 Movie Ultra v1.0.0 - Your Personal Movie Library</title>
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;600;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="src/styles.css">
@@ -42,9 +46,9 @@
 </aside>
 
 <nav>
-  <div class="menu-btn" onclick="toggleSidebar()" style="cursor:pointer; font-size:20px;">☰</div>
+  <button class="menu-btn" onclick="toggleSidebar()" style="cursor:pointer; font-size:20px; background:none; border:none; color:var(--text-main);" aria-label="Toggle sidebar menu">☰</button>
   <div id="pageTitle" style="font-weight:800; font-size:18px">HOME</div>
-  <div onclick="toggleTheme()" style="cursor:pointer; font-size:20px">🌓</div>
+  <button onclick="toggleTheme()" style="cursor:pointer; font-size:20px; background:none; border:none; color:var(--text-main);" aria-label="Toggle dark mode">🌓</button>
 </nav>
 
 <div id="searchContainer">
@@ -95,7 +99,6 @@
   <div class="b-item" onclick="showView('profile')"><span>👤</span>Me</div>
 </div>
 
-<script src="src/config.js"></script>
 <script src="src/script.js"></script>
 </body>
 </html>
