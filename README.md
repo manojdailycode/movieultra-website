@@ -6,6 +6,7 @@ Personal movie, series & anime tracking app — no login, no cloud, just yours.
 
 ## Features
 - Add movies, series, anime to your library
+- Watch Status per item: Planned / Watching / Completed / Dropped
 - Live worldwide trending via TMDB
 - Watchlist for saving items
 - Analytics breakdown
@@ -21,4 +22,4 @@ HTML · CSS · Vanilla JS · TMDB API · Jikan API · Vercel
 3. `npm start` → open `http://localhost:8000`
 
 ## Author
-Manoj Kumar · v1.0.0
+Manoj Kumar · v1.1.0
