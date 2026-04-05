@@ -35,12 +35,12 @@
     <div class="sb-item" onclick="showView('watchlist')"><span>⭐</span> Watchlist</div>
     <div class="sb-item" onclick="showView('analytics')"><span>📊</span> Analytics</div>
     <div class="sb-section-title">Data</div>
-    <div class="sb-item"><span>📥</span> Import Excel</div>
-    <div class="sb-item"><span>📤</span> Export Excel</div>
+    <div class="sb-item" onclick="importExcel()"><span>📥</span> Import Excel</div>
+    <div class="sb-item" onclick="exportExcel()"><span>📤</span> Export Excel</div>
     <div class="sb-section-title">Account</div>
     <div class="sb-item" onclick="showView('profile')"><span>👤</span> Profile</div>
     <div class="sb-item" onclick="showView('settings')"><span>⚙️</span> Settings</div>
-    <div class="sb-item"><span>💬</span> Feedback</div>
+    <div class="sb-item" onclick="openFeedback()"><span>💬</span> Feedback</div>
     <div class="sb-item logout" onclick="alert('Logging out...')"><span>🚪</span> Logout</div>
   </div>
 </aside>
@@ -81,6 +81,49 @@
     <div id="statsContent" style="background:var(--card-bg); padding:20px; border-radius:20px; border:1px solid var(--border)"></div>
   </section>
 
+  <!-- Movies filtered view -->
+  <section id="view-movies" class="view-section">
+    <h2 class="section-title">🎬 Movies</h2>
+    <div id="moviesGrid" class="poster-grid"></div>
+  </section>
+
+  <!-- Series filtered view -->
+  <section id="view-series" class="view-section">
+    <h2 class="section-title">📺 Series</h2>
+    <div id="seriesGrid" class="poster-grid"></div>
+  </section>
+
+  <!-- Anime filtered view -->
+  <section id="view-anime" class="view-section">
+    <h2 class="section-title">🌸 Anime</h2>
+    <div id="animeGrid" class="poster-grid"></div>
+  </section>
+
+  <!-- Watchlist -->
+  <section id="view-watchlist" class="view-section">
+    <h2 class="section-title">⭐ Watchlist</h2>
+    <div id="watchlistGrid" class="poster-grid"></div>
+  </section>
+
+  <!-- Settings -->
+  <section id="view-settings" class="view-section">
+    <h2 class="section-title">⚙️ Settings</h2>
+    <div class="settings-card">
+      <div class="settings-row">
+        <span>Dark Mode</span>
+        <button onclick="toggleTheme()" class="btn-setting">Toggle</button>
+      </div>
+      <div class="settings-row">
+        <span>Clear Library</span>
+        <button onclick="clearLibrary()" class="btn-setting btn-danger">Clear</button>
+      </div>
+      <div class="settings-row">
+        <span>App Version</span>
+        <span style="color:var(--text-sub)">v1.0.0</span>
+      </div>
+    </div>
+  </section>
+
   <section id="view-profile" class="view-section">
     <div style="text-align:center; padding:40px 0;">
        <div style="width:80px; height:80px; background:var(--accent); border-radius:50%; margin:0 auto 15px; display:flex; align-items:center; justify-content:center; font-size:30px; color:white">U</div>
@@ -99,6 +142,9 @@
   <div class="b-item" onclick="showView('profile')"><span>👤</span>Me</div>
 </div>
 
+<input type="file" id="importFile" accept=".xlsx,.xls" style="display:none">
+
+<script src="https://cdn.sheetjs.com/xlsx-0.20.0/package/dist/xlsx.full.min.js"></script>
 <script src="src/script.js"></script>
 </body>
 </html>

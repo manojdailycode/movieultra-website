@@ -1,5 +1,6 @@
 const VERSION = "1.0.0";
 let library = JSON.parse(localStorage.getItem("v4_pro_db")) || [];
+let watchlist = JSON.parse(localStorage.getItem("mu_watchlist")) || [];
 let activeType = 'movie';
 
 function toggleSidebar() {
@@ -7,7 +8,10 @@ function toggleSidebar() {
   document.getElementById("overlay").classList.toggle("active");
 }
 
-function toggleTheme() { document.body.classList.toggle("dark-mode"); }
+function toggleTheme() {
+  document.body.classList.toggle("dark-mode");
+  localStorage.setItem("mu_theme", document.body.classList.contains("dark-mode") ? "dark" : "light");
+}
 
 function setType(type) {
   activeType = type;
@@ -23,6 +27,10 @@ function showView(viewName) {
   document.getElementById('searchContainer').style.display = (viewName === 'home') ? 'block' : 'none';
   if (viewName === 'trending') loadTrending();
   if (viewName === 'analytics') loadStats();
+  if (viewName === 'movies') renderFiltered('movie', 'moviesGrid');
+  if (viewName === 'series') renderFiltered('tv', 'seriesGrid');
+  if (viewName === 'anime') renderFiltered('anime', 'animeGrid');
+  if (viewName === 'watchlist') renderWatchlist();
   if (viewName === 'profile') document.getElementById('appVersion').innerText = `v${VERSION}`;
   document.getElementById("sidebar").classList.remove("active");
   document.getElementById("overlay").classList.remove("active");
@@ -108,6 +116,74 @@ function remove(index) {
   render();
 }
 
+function addToWatchlist(idx) {
+  const item = library[idx];
+  const exists = watchlist.some(w => w.title === item.title && w.type === item.type);
+  if (exists) {
+    alert("Already in watchlist!");
+    return;
+  }
+  watchlist.unshift(item);
+  localStorage.setItem("mu_watchlist", JSON.stringify(watchlist));
+  alert("Added to Watchlist ⭐");
+}
+
+function removeFromWatchlist(idx) {
+  watchlist.splice(idx, 1);
+  localStorage.setItem("mu_watchlist", JSON.stringify(watchlist));
+  renderWatchlist();
+}
+
+function renderWatchlist() {
+  const grid = document.getElementById("watchlistGrid");
+  if (!grid) return;
+  if (!watchlist.length) {
+    grid.innerHTML = "<p class='placeholder-msg'>Watchlist is empty.</p>";
+    return;
+  }
+  grid.innerHTML = watchlist.map((item, idx) => `
+    <div class="movie-card">
+      <div class="poster-container">
+        <img src="${item.poster || ''}" alt="poster" onerror="this.src=''">
+        <div class="badge">★ ${item.rating}</div>
+      </div>
+      <div class="card-details">
+        <h3>${item.title}</h3>
+        <p style="font-size:11px;color:var(--text-sub);margin:4px 0">${item.year} · ${item.type.toUpperCase()}</p>
+        <button class="btn-remove" onclick="removeFromWatchlist(${idx})">Remove</button>
+      </div>
+    </div>`).join('');
+}
+
+function renderFiltered(type, gridId) {
+  const grid = document.getElementById(gridId);
+  if (!grid) return;
+  const items = library.filter(i => i.type === type);
+  if (!items.length) {
+    grid.innerHTML = "<p class='placeholder-msg'>Nothing here yet.</p>";
+    return;
+  }
+  grid.innerHTML = items.map(item => `
+    <div class="movie-card">
+      <div class="poster-container">
+        <img src="${item.poster || ''}" alt="poster" onerror="this.src=''">
+        <div class="badge">★ ${item.rating}</div>
+      </div>
+      <div class="card-details">
+        <h3>${item.title}</h3>
+        <p style="font-size:11px;color:var(--text-sub);margin:4px 0">${item.year}</p>
+        <button class="btn-remove" onclick="removeFiltered('${type}', '${item.title.replace(/'/g, "\\'")}', '${gridId}')">Remove</button>
+      </div>
+    </div>`).join('');
+}
+
+function removeFiltered(type, title, gridId) {
+  library = library.filter(i => !(i.type === type && i.title === title));
+  localStorage.setItem("v4_pro_db", JSON.stringify(library));
+  render();
+  renderFiltered(type, gridId);
+}
+
 function loadStats() {
   const container = document.getElementById('statsContent');
   if (!library.length) { container.innerHTML = "Add items to see analytics."; return; }
@@ -135,9 +211,93 @@ function render() {
       <div class="card-details">
         <h3>${item.title}</h3>
         <p style="font-size:11px;color:var(--text-sub);margin:4px 0">${item.year} · ${item.type.toUpperCase()}</p>
+        <button class="btn-add" onclick="addToWatchlist(${idx})" style="margin-top:6px">⭐ Watchlist</button>
         <button class="btn-remove" onclick="remove(${idx})">Remove</button>
       </div>
     </div>`).join('');
+}
+
+function exportExcel() {
+  if (!window.XLSX) {
+    alert("SheetJS not loaded");
+    return;
+  }
+  const rows = library.map(i => ({
+    Title: i.title,
+    Type: i.type,
+    Year: i.year,
+    Rating: i.rating,
+    Poster: i.poster || ''
+  }));
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(rows), "Library");
+  XLSX.writeFile(wb, "MovieUltra_Library.xlsx");
+}
+
+function importExcel() {
+  const input = document.getElementById("importFile");
+  if (input) input.click();
+}
+
+function clearLibrary() {
+  if (!confirm("Clear entire library?")) return;
+  library = [];
+  localStorage.setItem("v4_pro_db", JSON.stringify(library));
+  render();
+  renderFiltered('movie', 'moviesGrid');
+  renderFiltered('tv', 'seriesGrid');
+  renderFiltered('anime', 'animeGrid');
+}
+
+function openFeedback() {
+  alert("📧 contact.manoj.official@gmail.com\n✈️ Telegram: @Mavillamanoj");
+}
+
+if (localStorage.getItem("mu_theme") === "dark") {
+  document.body.classList.add("dark-mode");
+}
+
+const importInput = document.getElementById("importFile");
+if (importInput) {
+  importInput.addEventListener("change", e => {
+    const file = e.target.files[0];
+    if (!file) return;
+    if (!window.XLSX) {
+      alert("SheetJS not loaded");
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = ev => {
+      const wb = XLSX.read(ev.target.result, { type: "array" });
+      const rows = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]]);
+      let added = 0;
+
+      rows.forEach(row => {
+        const item = {
+          title: row.Title,
+          type: (row.Type || 'movie').toLowerCase(),
+          year: String(row.Year || ''),
+          rating: String(row.Rating || ''),
+          poster: row.Poster || ''
+        };
+
+        if (item.title && !library.some(l => l.title === item.title && l.type === item.type)) {
+          library.unshift(item);
+          added++;
+        }
+      });
+
+      localStorage.setItem("v4_pro_db", JSON.stringify(library));
+      render();
+      renderFiltered('movie', 'moviesGrid');
+      renderFiltered('tv', 'seriesGrid');
+      renderFiltered('anime', 'animeGrid');
+      alert(`Imported ${added} items`);
+      e.target.value = '';
+    };
+    reader.readAsArrayBuffer(file);
+  });
 }
 
 render();

@@ -7,3 +7,6 @@ src/config.js
 # OS generated files
 .DS_Store
 Thumbs.db
+
+# Editor settings
+.vscode/
