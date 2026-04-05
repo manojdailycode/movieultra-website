@@ -304,3 +304,60 @@ nav {
   color: var(--text-main);
   margin-bottom: 4px;
 }
+
+/* ═══════ v1.2.0 SEARCH + FILTER + SORT ═══════ */
+
+.library-tools {
+  max-width: 600px;
+  margin: -8px auto 14px;
+  padding: 0 20px;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+.library-tool-input,
+.library-tool-select,
+.library-tool-btn {
+  width: 100%;
+  border-radius: 12px;
+  border: 1px solid var(--border);
+  background: var(--card-bg);
+  color: var(--text-main);
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  padding: 10px 12px;
+  box-sizing: border-box;
+  outline: none;
+}
+
+.library-tool-input {
+  grid-column: 1 / -1;
+}
+
+.library-tool-select {
+  cursor: pointer;
+}
+
+.library-tool-btn {
+  grid-column: 1 / -1;
+  background: #eef2ff;
+  color: #4338ca;
+  border-color: #e0e7ff;
+  cursor: pointer;
+  font-weight: 700;
+}
+
+.dark-mode .library-tool-btn {
+  background: #1f2937;
+  color: #c7d2fe;
+  border-color: #374151;
+}
+
+@media (max-width: 600px) {
+  .library-tools {
+    grid-template-columns: 1fr;
+    padding: 0 12px;
+  }
+}

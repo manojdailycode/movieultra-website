@@ -1,4 +1,4 @@
-const VERSION = "1.1.0";
+const VERSION = "1.2.0";
 
 /* ── STORAGE KEYS ───────────────────────────── */
 const SK = {
@@ -33,6 +33,9 @@ const STATUS_LABELS = {
 let library   = JSON.parse(localStorage.getItem(SK.lib))      || [];
 let watchlist = JSON.parse(localStorage.getItem(SK.watchlist)) || [];
 let activeType = 'movie';
+let librarySearch = '';
+let librarySortBy = 'recent';
+let libraryStatusFilter = 'All';
 
 /* Ensure all items have status field */
 library = library.map(i => ({ status: 'Planned', ...i }));
@@ -99,6 +102,129 @@ function showView(viewName) {
 
   document.getElementById('sidebar').classList.remove('active');
   document.getElementById('overlay').classList.remove('active');
+}
+
+/* ── LIBRARY QUERY (SEARCH/FILTER/SORT) ─────── */
+function normalizeText(v) {
+  return String(v || '').trim().toLowerCase();
+}
+
+function ratingValue(v) {
+  const n = Number.parseFloat(v);
+  return Number.isFinite(n) ? n : -1;
+}
+
+function yearValue(v) {
+  const n = Number.parseInt(v, 10);
+  return Number.isFinite(n) ? n : 0;
+}
+
+function getProcessedLibrary(type = null) {
+  let items = library.map((item, idx) => ({ item, idx }));
+
+  if (type) {
+    items = items.filter(({ item }) => item.type === type);
+  }
+
+  const q = normalizeText(librarySearch);
+  if (q) {
+    items = items.filter(({ item }) => {
+      const hay = [item.title, item.year, item.type, item.status].map(normalizeText).join(' ');
+      return hay.includes(q);
+    });
+  }
+
+  if (libraryStatusFilter !== 'All') {
+    items = items.filter(({ item }) => (item.status || 'Planned') === libraryStatusFilter);
+  }
+
+  if (librarySortBy === 'rating') {
+    items.sort((a, b) => ratingValue(b.item.rating) - ratingValue(a.item.rating) || a.idx - b.idx);
+  } else if (librarySortBy === 'year') {
+    items.sort((a, b) => yearValue(b.item.year) - yearValue(a.item.year) || a.idx - b.idx);
+  } else {
+    items.sort((a, b) => a.idx - b.idx); // recently added (unshift keeps newest at index 0)
+  }
+
+  return items;
+}
+
+function ensureLibraryTools() {
+  const host = document.getElementById('searchContainer');
+  if (!host || document.getElementById('libraryTools')) return;
+
+  const tools = document.createElement('div');
+  tools.id = 'libraryTools';
+  tools.className = 'library-tools';
+  tools.innerHTML = `
+    <input id="librarySearchInput" class="library-tool-input" type="text" placeholder="Search inside library…" />
+    <select id="librarySortSelect" class="library-tool-select">
+      <option value="recent">⏱ Recently Added</option>
+      <option value="rating">⭐ Rating</option>
+      <option value="year">📅 Year</option>
+    </select>
+    <select id="libraryStatusSelect" class="library-tool-select">
+      <option value="All">🎯 All Status</option>
+      <option value="Planned">📋 Planned</option>
+      <option value="Watching">👁 Watching</option>
+      <option value="Completed">✅ Completed</option>
+      <option value="Dropped">❌ Dropped</option>
+    </select>
+    <button id="libraryToolsReset" class="library-tool-btn">Reset</button>
+  `;
+
+  host.appendChild(tools);
+
+  const searchEl = document.getElementById('librarySearchInput');
+  const sortEl = document.getElementById('librarySortSelect');
+  const statusEl = document.getElementById('libraryStatusSelect');
+  const resetEl = document.getElementById('libraryToolsReset');
+
+  if (searchEl) {
+    searchEl.addEventListener('input', e => {
+      librarySearch = e.target.value || '';
+      render();
+      renderFiltered('movie', 'moviesGrid');
+      renderFiltered('tv', 'seriesGrid');
+      renderFiltered('anime', 'animeGrid');
+    });
+  }
+
+  if (sortEl) {
+    sortEl.addEventListener('change', e => {
+      librarySortBy = e.target.value || 'recent';
+      render();
+      renderFiltered('movie', 'moviesGrid');
+      renderFiltered('tv', 'seriesGrid');
+      renderFiltered('anime', 'animeGrid');
+    });
+  }
+
+  if (statusEl) {
+    statusEl.addEventListener('change', e => {
+      libraryStatusFilter = e.target.value || 'All';
+      render();
+      renderFiltered('movie', 'moviesGrid');
+      renderFiltered('tv', 'seriesGrid');
+      renderFiltered('anime', 'animeGrid');
+    });
+  }
+
+  if (resetEl) {
+    resetEl.addEventListener('click', () => {
+      librarySearch = '';
+      librarySortBy = 'recent';
+      libraryStatusFilter = 'All';
+      if (searchEl) searchEl.value = '';
+      if (sortEl) sortEl.value = 'recent';
+      if (statusEl) statusEl.value = 'All';
+      render();
+      renderFiltered('movie', 'moviesGrid');
+      renderFiltered('tv', 'seriesGrid');
+      renderFiltered('anime', 'animeGrid');
+      showToast('Library filters reset');
+    });
+  }
 }
 
 /* ── CARD BUILDER (shared) ──────────────────── */
@@ -264,11 +390,16 @@ async function quickAdd(title, type) {
 function render() {
   const grid = document.getElementById('libraryGrid');
   if (!grid) return;
+  const items = getProcessedLibrary();
   if (!library.length) {
     grid.innerHTML = "<p class='placeholder-msg'>Library is empty — search above to add!</p>";
     return;
   }
-  grid.innerHTML = library.map((item, idx) =>
+  if (!items.length) {
+    grid.innerHTML = "<p class='placeholder-msg'>No items match current search/filter.</p>";
+    return;
+  }
+  grid.innerHTML = items.map(({ item, idx }) =>
     buildCard({
       item, idx,
       showStatus: true,
@@ -340,9 +471,11 @@ function addFromWatchlist(idx) {
 function renderFiltered(type, gridId) {
   const grid  = document.getElementById(gridId);
   if (!grid) return;
-  const items = library.map((item, idx) => ({ item, idx })).filter(({ item }) => item.type === type);
+  const items = getProcessedLibrary(type);
   if (!items.length) {
-    grid.innerHTML = "<p class='placeholder-msg'>Nothing here yet — add some!</p>";
+    grid.innerHTML = library.length
+      ? "<p class='placeholder-msg'>No items match current search/filter.</p>"
+      : "<p class='placeholder-msg'>Nothing here yet — add some!</p>";
     return;
   }
   grid.innerHTML = items.map(({ item, idx }) =>
@@ -491,4 +624,5 @@ function openFeedback() {
 }
 
 /* ── INIT ───────────────────────────────────── */
+ensureLibraryTools();
 render();
