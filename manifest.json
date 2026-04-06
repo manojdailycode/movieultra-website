@@ -1,0 +1,30 @@
+{
+  "name": "Movie Ultra",
+  "short_name": "MovieUltra",
+  "description": "Your personal movie, series & anime tracker",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0b0f1a",
+  "theme_color": "#3b82f6",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%20viewBox%3D%220%200%20512%20512%22%3E%3Crect%20width%3D%22512%22%20height%3D%22512%22%20rx%3D%2280%22%20fill%3D%22%233b82f6%22/%3E%3Cg%20fill%3D%22%23ffffff%22%3E%3Ccircle%20cx%3D%2290%22%20cy%3D%22120%22%20r%3D%2218%22/%3E%3Ccircle%20cx%3D%2290%22%20cy%3D%22190%22%20r%3D%2218%22/%3E%3Ccircle%20cx%3D%2290%22%20cy%3D%22260%22%20r%3D%2218%22/%3E%3Ccircle%20cx%3D%2290%22%20cy%3D%22330%22%20r%3D%2218%22/%3E%3Ccircle%20cx%3D%2290%22%20cy%3D%22400%22%20r%3D%2218%22/%3E%3C/g%3E%3Ctext%20x%3D%22210%22%20y%3D%22320%22%20font-family%3D%22Arial%2Csans-serif%22%20font-size%3D%22170%22%20font-weight%3D%22700%22%20fill%3D%22%23ffffff%22%3EMU%3C/text%3E%3C/svg%3E",
+      "sizes": "192x192",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%20viewBox%3D%220%200%20512%20512%22%3E%3Crect%20width%3D%22512%22%20height%3D%22512%22%20rx%3D%2280%22%20fill%3D%22%233b82f6%22/%3E%3Cg%20fill%3D%22%23ffffff%22%3E%3Ccircle%20cx%3D%2290%22%20cy%3D%22120%22%20r%3D%2218%22/%3E%3Ccircle%20cx%3D%2290%22%20cy%3D%22190%22%20r%3D%2218%22/%3E%3Ccircle%20cx%3D%2290%22%20cy%3D%22260%22%20r%3D%2218%22/%3E%3Ccircle%20cx%3D%2290%22%20cy%3D%22330%22%20r%3D%2218%22/%3E%3Ccircle%20cx%3D%2290%22%20cy%3D%22400%22%20r%3D%2218%22/%3E%3C/g%3E%3Ctext%20x%3D%22210%22%20y%3D%22320%22%20font-family%3D%22Arial%2Csans-serif%22%20font-size%3D%22170%22%20font-weight%3D%22700%22%20fill%3D%22%23ffffff%22%3EMU%3C/text%3E%3C/svg%3E",
+      "sizes": "512x512",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "src/logo.svg",
+      "type": "image/svg+xml",
+      "sizes": "any",
+      "purpose": "any maskable"
+    }
+  ]
+}

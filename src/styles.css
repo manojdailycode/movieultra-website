@@ -23,7 +23,24 @@ body {
   background: var(--bg);
   color: var(--text-main);
   transition: background 0.3s;
-  padding-bottom: 100px;
+  padding-bottom: calc(100px + env(safe-area-inset-bottom));
+}
+
+.offline-banner {
+  display: none;
+  background: #ef4444;
+  color: #fff;
+  text-align: center;
+  padding: 6px;
+  font-size: 12px;
+  font-weight: 700;
+  position: sticky;
+  top: 0;
+  z-index: 1400;
+}
+
+.offline-banner.show {
+  display: block;
 }
 
 /* --- SIDEBAR --- */

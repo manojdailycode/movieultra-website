@@ -1,6 +1,6 @@
 'use strict';
 
-const VERSION = "1.4.0";
+const VERSION = "1.5.0";
 
 /* ── STORAGE KEYS ───────────────────────────── */
 const SK = {
@@ -89,6 +89,12 @@ function showToast(msg) {
   toast.className = 'mu-toast mu-toast-show';
   clearTimeout(window._toastTimer);
   window._toastTimer = setTimeout(() => toast.classList.remove('mu-toast-show'), 3000);
+}
+
+function updateOfflineBanner() {
+  const banner = document.getElementById('offlineBanner');
+  if (!banner) return;
+  banner.classList.toggle('show', !navigator.onLine);
 }
 
 /* ── SIDEBAR ────────────────────────────────── */
@@ -722,7 +728,9 @@ async function loadTrending() {
         </div>`;
     }).join('');
   } catch(e) {
-    grid.innerHTML = "<p class='placeholder-msg'>Failed to load — check connection.</p>";
+    grid.innerHTML = `
+      <p class='placeholder-msg'>Failed to load — check connection.</p>
+      <button onclick="loadTrending()" class="btn-add" style="margin:20px auto;display:block">Retry</button>`;
   }
 }
 
@@ -977,4 +985,7 @@ function openFeedback() { showToast('📧 contact.manoj.official@gmail.com'); }
 
 /* ── INIT ───────────────────────────────────── */
 ensureLibraryTools();
+updateOfflineBanner();
+window.addEventListener('online', updateOfflineBanner);
+window.addEventListener('offline', updateOfflineBanner);
 render();
