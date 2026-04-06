@@ -7,7 +7,7 @@
   <meta name="keywords" content="movie tracker, tv series, anime, library, TMDB, personal collection">
   <meta name="author" content="Manoj Kumar">
   <meta name="theme-color" content="#3b82f6">
-  <title>🎬 Movie Ultra v1.1.0 - Your Personal Movie Library</title>
+  <title>🎬 Movie Ultra v1.3.0 - Your Personal Movie Library</title>
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;600;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="src/styles.css">
 
@@ -22,7 +22,7 @@
       <img src="src/logo.svg" alt="Movie Ultra Logo" class="sb-logo-img"
            onerror="this.style.display='none'; document.getElementById('logoFallback').style.display='block';">
       <div id="logoFallback" class="sb-logo-fallback" style="display:none">MOVIE ULTRA</div>
-      <div class="sb-version">v1.0.0</div>
+      <div class="sb-version">v1.3.0</div>
     </div>
   </div>
   <div class="sb-content">
@@ -119,7 +119,7 @@
       </div>
       <div class="settings-row">
         <span>App Version</span>
-        <span style="color:var(--text-sub)">v1.1.0</span>
+        <span style="color:var(--text-sub)">v1.3.0</span>
       </div>
     </div>
   </section>
@@ -143,6 +143,61 @@
 </div>
 
 <input type="file" id="importFile" accept=".xlsx,.xls" style="display:none">
+
+<!-- ── DETAIL MODAL ────────────────────── -->
+<div id="detailModal" class="modal-overlay hidden" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+  <div class="modal-card">
+    <button class="modal-close-btn" id="modalClose" aria-label="Close">✕</button>
+
+    <!-- Backdrop hero -->
+    <div class="modal-hero">
+      <img id="modalBackdrop" src="" alt="" class="modal-backdrop-img" loading="lazy">
+      <div class="modal-hero-overlay" aria-hidden="true"></div>
+    </div>
+
+    <!-- Body -->
+    <div class="modal-body">
+      <!-- Pills: type + year + runtime -->
+      <div class="modal-pills" id="modalPills"></div>
+
+      <!-- Title -->
+      <h2 class="modal-title" id="modalTitle"></h2>
+
+      <!-- Overview -->
+      <p class="modal-overview" id="modalOverview"></p>
+
+      <!-- Genres -->
+      <div class="modal-genres" id="modalGenres"></div>
+
+      <!-- Personal Star Rating -->
+      <div class="modal-section">
+        <p class="modal-section-label">Your Rating</p>
+        <div class="star-rating" id="modalStars" role="group" aria-label="Rate this title">
+          <button class="star" data-v="1" aria-label="1 star">★</button>
+          <button class="star" data-v="2" aria-label="2 stars">★</button>
+          <button class="star" data-v="3" aria-label="3 stars">★</button>
+          <button class="star" data-v="4" aria-label="4 stars">★</button>
+          <button class="star" data-v="5" aria-label="5 stars">★</button>
+        </div>
+        <p class="star-hint" id="starHint">Tap to rate</p>
+      </div>
+
+      <!-- Status inside modal -->
+      <div class="modal-section" id="modalStatusSection">
+        <p class="modal-section-label">Status</p>
+        <div class="modal-status-pills" id="modalStatusPills">
+          <button class="modal-status-pill" data-s="Planned">📋 Planned</button>
+          <button class="modal-status-pill" data-s="Watching">👁 Watching</button>
+          <button class="modal-status-pill" data-s="Completed">✅ Completed</button>
+          <button class="modal-status-pill" data-s="Dropped">❌ Dropped</button>
+        </div>
+      </div>
+
+      <!-- Footer actions -->
+      <div class="modal-foot" id="modalFoot"></div>
+    </div>
+  </div>
+</div>
 
 <script src="https://cdn.sheetjs.com/xlsx-0.20.0/package/dist/xlsx.full.min.js"></script>
 <script src="src/script.js"></script>
