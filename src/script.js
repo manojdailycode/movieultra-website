@@ -1,6 +1,6 @@
 'use strict';
 
-const VERSION = "1.5.0";
+const VERSION = "1.6.0";
 
 /* ── STORAGE KEYS ───────────────────────────── */
 const SK = {
@@ -858,52 +858,205 @@ function removeFiltered(idx, gridId) {
 }
 
 /* ── ANALYTICS ──────────────────────────────── */
-function loadStats() {
-  const container = document.getElementById('statsContent');
-  if (!library.length) {
-    container.innerHTML = "<p class='placeholder-msg'>Add items to see analytics.</p>";
+function getCssVar(name, fallback = '') {
+  const v = getComputedStyle(document.body).getPropertyValue(name).trim();
+  return v || fallback;
+}
+
+function drawTypeDoughnut(canvas, typeCounts) {
+  if (!canvas) return;
+  const ctx = canvas.getContext('2d');
+  if (!ctx) return;
+
+  const total = typeCounts.movie + typeCounts.tv + typeCounts.anime;
+  const textMain = getCssVar('--text-main', '#111827');
+  const textSub  = getCssVar('--text-sub', '#6b7280');
+
+  const cx = canvas.width / 2;
+  const cy = canvas.height / 2;
+  const radius = 84;
+  const innerR = 54;
+
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+  if (total === 0) {
+    ctx.beginPath();
+    ctx.arc(cx, cy, radius, 0, Math.PI * 2);
+    ctx.arc(cx, cy, innerR, 0, Math.PI * 2, true);
+    ctx.closePath();
+    ctx.fillStyle = '#d1d5db';
+    ctx.fill();
+
+    ctx.fillStyle = textSub;
+    ctx.font = '700 16px Plus Jakarta Sans';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText('Empty', cx, cy);
     return;
   }
-  const total = library.length;
-  const tc = library.reduce((a, i) => { a[i.type]=(a[i.type]||0)+1; return a; }, {movie:0,tv:0,anime:0});
-  const sc = library.reduce((a, i) => {
-    const s = i.status||'Planned'; a[s]=(a[s]||0)+1; return a;
-  }, {Planned:0,Watching:0,Completed:0,Dropped:0});
-  const rated = library.filter(i => i.starRating > 0);
-  const avgStar = rated.length
-    ? (rated.reduce((s,i) => s + i.starRating, 0) / rated.length).toFixed(1) : '—';
 
-  const bar = (count, color) =>
-    `<div style="width:${total?(count/total)*100:0}%;background:${color};height:100%;border-radius:50px;transition:width .5s"></div>`;
+  const segments = [
+    { value: typeCounts.movie, color: '#3b82f6' },
+    { value: typeCounts.tv,    color: '#10b981' },
+    { value: typeCounts.anime, color: '#f59e0b' },
+  ];
+
+  let start = -Math.PI / 2;
+  segments.forEach(seg => {
+    if (!seg.value) return;
+    const angle = (seg.value / total) * Math.PI * 2;
+    ctx.beginPath();
+    ctx.moveTo(cx, cy);
+    ctx.arc(cx, cy, radius, start, start + angle);
+    ctx.arc(cx, cy, innerR, start + angle, start, true);
+    ctx.closePath();
+    ctx.fillStyle = seg.color;
+    ctx.fill();
+    start += angle;
+  });
+
+  ctx.fillStyle = textMain;
+  ctx.font = '800 28px Plus Jakarta Sans';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.fillText(String(total), cx, cy);
+}
+
+function animateHorizontalBars(selector, duration = 600) {
+  const bars = Array.from(document.querySelectorAll(selector));
+  if (!bars.length) return;
+
+  const targets = bars.map(b => parseFloat(b.dataset.target || '0'));
+  const startAt = performance.now();
+
+  function frame(now) {
+    const p = Math.min((now - startAt) / duration, 1);
+    bars.forEach((bar, i) => {
+      bar.style.width = `${targets[i] * p}%`;
+    });
+    if (p < 1) requestAnimationFrame(frame);
+  }
+  requestAnimationFrame(frame);
+}
+
+function loadStats() {
+  const container = document.getElementById('statsContent');
+  if (!container) return;
+
+  const total = library.length;
+  const typeCounts = library.reduce((a, i) => {
+    a[i.type] = (a[i.type] || 0) + 1;
+    return a;
+  }, { movie: 0, tv: 0, anime: 0 });
+
+  const statusCounts = library.reduce((a, i) => {
+    const s = i.status || 'Planned';
+    a[s] = (a[s] || 0) + 1;
+    return a;
+  }, { Planned: 0, Watching: 0, Completed: 0, Dropped: 0 });
+
+  const rated = library.filter(i => (i.starRating || 0) > 0);
+  const avgStar = rated.length
+    ? (rated.reduce((s, i) => s + i.starRating, 0) / rated.length).toFixed(1)
+    : '—';
+
+  const ratingDist = [1, 2, 3, 4, 5].map(star =>
+    rated.filter(i => i.starRating === star).length
+  );
+  const maxRatingCount = Math.max(...ratingDist, 0);
+
+  const genreMap = library.reduce((acc, item) => {
+    const list = Array.isArray(item.genres) ? item.genres : [];
+    list.forEach(g => {
+      const key = String(g || '').trim();
+      if (!key) return;
+      acc[key] = (acc[key] || 0) + 1;
+    });
+    return acc;
+  }, {});
+  const topGenres = Object.entries(genreMap)
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 5);
+
+  const statusRows = [
+    { name: 'Planned',   icon: '📋', color: '#6b7280', count: statusCounts.Planned },
+    { name: 'Watching',  icon: '👁', color: '#3b82f6', count: statusCounts.Watching },
+    { name: 'Completed', icon: '✅', color: '#10b981', count: statusCounts.Completed },
+    { name: 'Dropped',   icon: '❌', color: '#ef4444', count: statusCounts.Dropped },
+  ];
+  const maxStatus = Math.max(...statusRows.map(r => r.count), 0);
 
   container.innerHTML = `
-    <div class="stats-row"><span>Total Items</span><strong>${total}</strong></div>
-    <div class="stats-row"><span>Avg Star Rating</span><strong>${avgStar} ★</strong></div>
+    <div class="stats-summary-grid">
+      <div class="stats-summary-card">
+        <div class="stats-summary-num">${total}</div>
+        <div class="stats-summary-lbl">Total Items</div>
+      </div>
+      <div class="stats-summary-card">
+        <div class="stats-summary-num">${statusCounts.Completed}</div>
+        <div class="stats-summary-lbl">Completed</div>
+      </div>
+      <div class="stats-summary-card">
+        <div class="stats-summary-num">${avgStar}</div>
+        <div class="stats-summary-lbl">Avg Star Rating</div>
+      </div>
+      <div class="stats-summary-card">
+        <div class="stats-summary-num">${watchlist.length}</div>
+        <div class="stats-summary-lbl">Watchlist Size</div>
+      </div>
+    </div>
 
     <p class="stats-label">By Type</p>
-    <div class="stats-bar-wrap">
-      <div class="stats-bar-row"><span>🎬 Movies</span>
-        <div class="stats-bar">${bar(tc.movie,'var(--accent)')}</div>
-        <strong>${tc.movie}</strong></div>
-      <div class="stats-bar-row"><span>📺 Series</span>
-        <div class="stats-bar">${bar(tc.tv,'#10b981')}</div>
-        <strong>${tc.tv}</strong></div>
-      <div class="stats-bar-row"><span>🌸 Anime</span>
-        <div class="stats-bar">${bar(tc.anime,'#f59e0b')}</div>
-        <strong>${tc.anime}</strong></div>
+    <div class="stats-doughnut-wrap">
+      <canvas id="typeDoughnut" class="stats-doughnut-canvas" width="200" height="200"></canvas>
+      <div class="stats-doughnut-legend">
+        <div class="stats-legend-item"><span class="stats-legend-dot" style="background:#3b82f6"></span>Movies <strong>${typeCounts.movie}</strong></div>
+        <div class="stats-legend-item"><span class="stats-legend-dot" style="background:#10b981"></span>Series <strong>${typeCounts.tv}</strong></div>
+        <div class="stats-legend-item"><span class="stats-legend-dot" style="background:#f59e0b"></span>Anime <strong>${typeCounts.anime}</strong></div>
+      </div>
     </div>
 
     <p class="stats-label">By Status</p>
-    <div class="stats-status-grid">
-      <div class="stats-status-card" style="border-color:#6b7280">
-        <div class="stats-status-num">${sc.Planned}</div><div>📋 Planned</div></div>
-      <div class="stats-status-card" style="border-color:#3b82f6">
-        <div class="stats-status-num">${sc.Watching}</div><div>👁 Watching</div></div>
-      <div class="stats-status-card" style="border-color:#10b981">
-        <div class="stats-status-num">${sc.Completed}</div><div>✅ Completed</div></div>
-      <div class="stats-status-card" style="border-color:#ef4444">
-        <div class="stats-status-num">${sc.Dropped}</div><div>❌ Dropped</div></div>
+    <div class="stats-hbar-wrap">
+      ${statusRows.map(row => {
+        const target = maxStatus ? (row.count / maxStatus) * 100 : 0;
+        return `
+          <div class="stats-hbar-row">
+            <div class="stats-hbar-left">${row.icon} ${row.name}</div>
+            <div class="stats-hbar-track">
+              <div class="stats-hbar-fill" data-animate="status" data-target="${target.toFixed(2)}" style="background:${row.color};width:0%"></div>
+            </div>
+            <div class="stats-hbar-count">${row.count}</div>
+          </div>`;
+      }).join('')}
+    </div>
+
+    <p class="stats-label">Your Ratings</p>
+    <div class="stats-ratings-wrap">
+      ${rated.length ? [1, 2, 3, 4, 5].map(star => {
+        const count = ratingDist[star - 1];
+        const target = maxRatingCount ? (count / maxRatingCount) * 100 : 0;
+        return `
+          <div class="stats-hbar-row">
+            <div class="stats-hbar-left">${'★'.repeat(star).padEnd(5, '☆')}</div>
+            <div class="stats-hbar-track">
+              <div class="stats-hbar-fill" data-animate="rating" data-target="${target.toFixed(2)}" style="background:#f59e0b;width:0%"></div>
+            </div>
+            <div class="stats-hbar-count">${count}</div>
+          </div>`;
+      }).join('') : `<p class="stats-empty-note">Rate some items to see distribution</p>`}
+    </div>
+
+    <p class="stats-label">Top Genres</p>
+    <div class="stats-genres-wrap">
+      ${topGenres.length
+        ? topGenres.map(([genre, count], i) => `<span class="stats-genre-pill rank-${i + 1}">#${i + 1} ${genre} <strong>${count}</strong></span>`).join('')
+        : `<p class="stats-empty-note">Open items to load genres</p>`}
     </div>`;
+
+  drawTypeDoughnut(document.getElementById('typeDoughnut'), typeCounts);
+  animateHorizontalBars('.stats-hbar-fill[data-animate="status"]', 600);
+  animateHorizontalBars('.stats-hbar-fill[data-animate="rating"]', 600);
 }
 
 /* ── EXCEL ──────────────────────────────────── */
