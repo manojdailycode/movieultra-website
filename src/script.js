@@ -45,6 +45,7 @@ let librarySearch       = '';
 let librarySortBy       = 'recent';
 let libraryStatusFilter = 'All';
 let _modalIdx           = null;   // index of item currently open in modal
+let trendingItems       = [];
 
 /* Ensure all items have required fields */
 library = library.map(i => ({
@@ -64,6 +65,17 @@ watchlist = watchlist.map(i => ({
 /* ── SAVE HELPERS ───────────────────────────── */
 function saveLib()  { localStorage.setItem(SK.lib, JSON.stringify(library)); }
 function saveWl()   { localStorage.setItem(SK.watchlist, JSON.stringify(watchlist)); }
+
+function getSourceArray(source) {
+  if (source === 'watchlist') return watchlist;
+  if (source === 'trending') return trendingItems;
+  return library;
+}
+
+function persistSource(source) {
+  if (source === 'watchlist') return saveWl();
+  if (source === 'library') return saveLib();
+}
 
 /* ── TOAST ──────────────────────────────────── */
 function showToast(msg) {
@@ -268,10 +280,10 @@ function buildCard({ item, idx, actions = [], showStatus = true, source = 'libra
 
 /* ── STATUS UPDATE ──────────────────────────── */
 function setStatus(idx, status, source) {
-  const arr = source === 'watchlist' ? watchlist : library;
+  const arr = getSourceArray(source);
   if (!arr[idx]) return;
   arr[idx] = { ...arr[idx], status };
-  source === 'watchlist' ? saveWl() : saveLib();
+  persistSource(source);
   showToast(`Status → ${status}`);
   render();
   renderFiltered('movie', 'moviesGrid');
@@ -286,7 +298,7 @@ function setStatus(idx, status, source) {
 
 function openModal(idx, source) {
   source = source || 'library';
-  const arr = source === 'watchlist' ? watchlist : library;
+  const arr = getSourceArray(source);
   const item = arr[idx];
   if (!item) return;
   _modalIdx = { idx, source };
@@ -334,6 +346,13 @@ function buildModalPills(item) {
 }
 
 function buildModalFoot(source) {
+  if (source === 'trending') {
+    return `
+      <button class="modal-btn-ghost"   onclick="openTrailerFromModal()">▶ Trailer</button>
+      <button class="modal-btn-primary" onclick="modalAddToLibrary()">+ Add to Library</button>
+      <button class="modal-btn-primary" onclick="modalAddToWatchlist()">⭐ Watchlist</button>
+      <button class="modal-btn-ghost"   onclick="closeModal()">Close</button>`;
+  }
   if (source === 'watchlist') {
     return `
       <button class="modal-btn-ghost"   onclick="openTrailerFromModal()">▶ Trailer</button>
@@ -394,10 +413,10 @@ async function fetchItemDetails(item, idx, source) {
     }
 
     /* Persist to library for next time */
-    const arr = source === 'watchlist' ? watchlist : library;
+    const arr = getSourceArray(source);
     if (arr[idx]) {
       arr[idx] = { ...arr[idx], backdrop, overview, genres };
-      source === 'watchlist' ? saveWl() : saveLib();
+      persistSource(source);
     }
   } catch(e) { /* silently ignore */ }
 }
@@ -432,10 +451,10 @@ function renderModalPlatform(current) {
 }
 
 function setPlatform(idx, platform, source) {
-  const arr = source === 'watchlist' ? watchlist : library;
+  const arr = getSourceArray(source);
   if (!arr[idx]) return;
   arr[idx] = { ...arr[idx], platform };
-  source === 'watchlist' ? saveWl() : saveLib();
+  persistSource(source);
   render();
   renderFiltered('movie', 'moviesGrid');
   renderFiltered('tv',    'seriesGrid');
@@ -446,7 +465,7 @@ function setPlatform(idx, platform, source) {
 async function openTrailerFromModal() {
   if (!_modalIdx) return;
   const { idx, source } = _modalIdx;
-  const arr = source === 'watchlist' ? watchlist : library;
+  const arr = getSourceArray(source);
   const item = arr[idx];
   if (!item) return;
 
@@ -503,10 +522,10 @@ document.addEventListener('click', e => {
   if (!star || !_modalIdx) return;
   const v      = parseInt(star.dataset.v, 10);
   const { idx, source } = _modalIdx;
-  const arr    = source === 'watchlist' ? watchlist : library;
+  const arr    = getSourceArray(source);
   if (!arr[idx]) return;
   arr[idx] = { ...arr[idx], starRating: v };
-  source === 'watchlist' ? saveWl() : saveLib();
+  persistSource(source);
   renderModalStars(v);
   render();
   renderFiltered('movie', 'moviesGrid');
@@ -555,8 +574,8 @@ document.getElementById('modalClose')?.addEventListener('click', closeModal);
 /* Watchlist add from modal */
 function modalAddToWatchlist() {
   if (!_modalIdx) return;
-  const { idx } = _modalIdx;
-  const item = library[idx];
+  const { idx, source } = _modalIdx;
+  const item = getSourceArray(source)[idx];
   if (!item) return;
   const dup = watchlist.some(w => w.title === item.title && w.type === item.type);
   if (dup) { showToast('Already in watchlist'); return; }
@@ -567,8 +586,8 @@ function modalAddToWatchlist() {
 
 function modalAddToLibrary() {
   if (!_modalIdx) return;
-  const { idx } = _modalIdx;
-  const item = watchlist[idx];
+  const { idx, source } = _modalIdx;
+  const item = getSourceArray(source)[idx];
   if (!item) return;
   const dup = library.some(l => l.title === item.title && l.type === item.type);
   if (dup) { showToast('Already in library'); return; }
@@ -663,23 +682,41 @@ async function loadTrending() {
     const res   = await fetch('/api/tmdb?path=trending/all/day');
     const data  = await res.json();
     const items = data.results || [];
-    if (!items.length) { grid.innerHTML = "<p class='placeholder-msg'>No results.</p>"; return; }
-    grid.innerHTML = items.map(item => {
-      const type  = item.media_type === 'movie' ? 'movie' : 'tv';
-      const title = item.title || item.name || '';
+    trendingItems = items.map(item => {
+      const type = item.media_type === 'movie' ? 'movie' : 'tv';
+      return {
+        title: item.title || item.name || '',
+        year: (item.release_date || item.first_air_date || 'N/A').split('-')[0],
+        rating: item.vote_average != null ? item.vote_average.toFixed(1) : 'N/A',
+        poster: item.poster_path ? `https://image.tmdb.org/t/p/w500${item.poster_path}` : '',
+        backdrop: item.backdrop_path ? `https://image.tmdb.org/t/p/w780${item.backdrop_path}` : '',
+        overview: item.overview || '',
+        type,
+        status: 'Planned',
+        starRating: 0,
+        platform: '',
+      };
+    });
+
+    if (!trendingItems.length) {
+      grid.innerHTML = "<p class='placeholder-msg'>No results.</p>";
+      return;
+    }
+
+    grid.innerHTML = trendingItems.map((item, idx) => {
+      const title = item.title || '';
       const safe  = title.replace(/\\/g, '\\\\').replace(/'/g, "\\'");
       return `
-        <div class="movie-card">
+        <div class="movie-card" onclick="openModal(${idx},'trending')" style="cursor:pointer">
           <div class="poster-container">
-            <img src="https://image.tmdb.org/t/p/w500${item.poster_path||''}"
-                 loading="lazy" onerror="this.src=''">
-            <div class="badge">★ ${item.vote_average?.toFixed(1)||'N/A'}</div>
+            <img src="${item.poster || ''}" loading="lazy" onerror="this.src=''">
+            <div class="badge">★ ${item.rating || 'N/A'}</div>
           </div>
-          <div class="card-details">
+          <div class="card-details" onclick="event.stopPropagation()">
             <h3 title="${title.replace(/"/g,'&quot;')}">${title}</h3>
-            <p class="card-meta">${type.toUpperCase()}</p>
+            <p class="card-meta">${(item.type || '').toUpperCase()}</p>
             <div class="card-actions">
-              <button class="btn-add" onclick="quickAdd('${safe}','${type}')">+ Library</button>
+              <button class="btn-add" onclick="event.stopPropagation(); quickAdd('${safe}','${item.type}')">+ Library</button>
             </div>
           </div>
         </div>`;
