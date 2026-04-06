@@ -1,6 +1,6 @@
 'use strict';
 
-const VERSION = "1.3.0";
+const VERSION = "1.4.0";
 
 /* ── STORAGE KEYS ───────────────────────────── */
 const SK = {
@@ -27,6 +27,16 @@ const STATUS_LABELS = {
   Dropped:   { icon: '❌', color: '#ef4444' },
 };
 
+const PLATFORM_COLORS = {
+  'Netflix': '#E50914',
+  'Prime': '#00A8E1',
+  'Disney+': '#113CCF',
+  'Hulu': '#1CE783',
+  'HBO': '#8B00FF',
+};
+
+const PLATFORM_LIST = ['Netflix', 'Prime', 'Disney+', 'Hulu', 'HBO'];
+
 /* ── STATE ──────────────────────────────────── */
 let library   = JSON.parse(localStorage.getItem(SK.lib))      || [];
 let watchlist = JSON.parse(localStorage.getItem(SK.watchlist)) || [];
@@ -40,6 +50,14 @@ let _modalIdx           = null;   // index of item currently open in modal
 library = library.map(i => ({
   status:     'Planned',
   starRating: 0,
+  platform:   '',
+  ...i,
+}));
+
+watchlist = watchlist.map(i => ({
+  status:     'Planned',
+  starRating: 0,
+  platform:   '',
   ...i,
 }));
 
@@ -207,11 +225,16 @@ function buildCard({ item, idx, actions = [], showStatus = true, source = 'libra
   const status = item.status || 'Planned';
   const s      = STATUS_LABELS[status] || STATUS_LABELS.Planned;
   const stars  = item.starRating || 0;
+  const platform = item.platform || '';
+  const pColor = PLATFORM_COLORS[platform] || '';
   const starBar = stars > 0
     ? `<div class="card-stars">${'★'.repeat(stars)}${'☆'.repeat(5 - stars)}</div>` : '';
 
   const statusBadge = showStatus
     ? `<div class="status-badge" style="background:${s.color}">${s.icon} ${status}</div>` : '';
+
+  const platformBadge = platform && pColor
+    ? `<div class="platform-badge" style="background:${pColor}">${platform}</div>` : '';
 
   const statusSelect = showStatus ? `
     <select class="status-select" onchange="setStatus(${idx},this.value,'${source}')">
@@ -230,6 +253,7 @@ function buildCard({ item, idx, actions = [], showStatus = true, source = 'libra
         <img src="${item.poster||''}" alt="${(item.title||'').replace(/"/g,'&quot;')}"
              loading="lazy" onerror="this.src=''">
         <div class="badge">★ ${item.rating||'N/A'}</div>
+        ${platformBadge}
         ${statusBadge}
       </div>
       <div class="card-details" onclick="event.stopPropagation()">
@@ -286,6 +310,9 @@ function openModal(idx, source) {
   /* Status pills */
   renderModalStatus(item.status || 'Planned');
 
+  /* Platform pills */
+  renderModalPlatform(item.platform || '');
+
   /* Footer */
   document.getElementById('modalFoot').innerHTML = buildModalFoot(source);
 
@@ -309,10 +336,12 @@ function buildModalPills(item) {
 function buildModalFoot(source) {
   if (source === 'watchlist') {
     return `
+      <button class="modal-btn-ghost"   onclick="openTrailerFromModal()">▶ Trailer</button>
       <button class="modal-btn-primary" onclick="modalAddToLibrary()">+ Add to Library</button>
       <button class="modal-btn-ghost"   onclick="closeModal()">Close</button>`;
   }
   return `
+    <button class="modal-btn-ghost"   onclick="openTrailerFromModal()">▶ Trailer</button>
     <button class="modal-btn-primary" onclick="modalAddToWatchlist()">⭐ Watchlist</button>
     <button class="modal-btn-ghost"   onclick="closeModal()">Close</button>`;
 }
@@ -392,6 +421,82 @@ function renderModalStatus(current) {
   });
 }
 
+function renderModalPlatform(current) {
+  const wrap = document.getElementById('modalPlatformPills');
+  if (!wrap) return;
+  wrap.innerHTML = PLATFORM_LIST.map(name => {
+    const active = name === current;
+    const color = PLATFORM_COLORS[name];
+    return `<button class="modal-platform-pill ${active ? 'active' : ''}" data-p="${name}" style="--p-color:${color}">${name}</button>`;
+  }).join('');
+}
+
+function setPlatform(idx, platform, source) {
+  const arr = source === 'watchlist' ? watchlist : library;
+  if (!arr[idx]) return;
+  arr[idx] = { ...arr[idx], platform };
+  source === 'watchlist' ? saveWl() : saveLib();
+  render();
+  renderFiltered('movie', 'moviesGrid');
+  renderFiltered('tv',    'seriesGrid');
+  renderFiltered('anime', 'animeGrid');
+  if (source === 'watchlist') renderWatchlist();
+}
+
+async function openTrailerFromModal() {
+  if (!_modalIdx) return;
+  const { idx, source } = _modalIdx;
+  const arr = source === 'watchlist' ? watchlist : library;
+  const item = arr[idx];
+  if (!item) return;
+
+  if (item.type === 'anime') {
+    showToast('Trailers not available for anime');
+    return;
+  }
+
+  const searchType = item.type === 'tv' ? 'tv' : 'movie';
+  try {
+    const sr = await fetch(`/api/tmdb?path=search/${searchType}&query=${encodeURIComponent(item.title || '')}`);
+    const sd = await sr.json();
+    const tmdbId = sd.results?.[0]?.id;
+    if (!tmdbId) {
+      showToast('No trailer found ❌');
+      return;
+    }
+
+    const vr = await fetch(`/api/tmdb?path=${searchType}/${tmdbId}/videos`);
+    const vd = await vr.json();
+    const trailer = (vd.results || []).find(v => v.type === 'Trailer' && v.site === 'YouTube' && v.key);
+    if (!trailer) {
+      showToast('No trailer found ❌');
+      return;
+    }
+    openTrailerModal(trailer.key);
+  } catch (e) {
+    showToast('No trailer found ❌');
+  }
+}
+
+function openTrailerModal(youtubeKey) {
+  const modal = document.getElementById('trailerModal');
+  const wrap  = document.getElementById('trailerFrameWrap');
+  if (!modal || !wrap || !youtubeKey) return;
+  wrap.innerHTML = `<iframe width="560" height="315" src="https://www.youtube.com/embed/${youtubeKey}?autoplay=1" title="YouTube trailer" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe>`;
+  modal.classList.remove('hidden');
+  document.body.style.overflow = 'hidden';
+}
+
+function closeTrailerModal() {
+  const modal = document.getElementById('trailerModal');
+  const wrap  = document.getElementById('trailerFrameWrap');
+  if (modal) modal.classList.add('hidden');
+  if (wrap) wrap.innerHTML = '';
+  if (document.getElementById('detailModal')?.classList.contains('hidden')) {
+    document.body.style.overflow = '';
+  }
+}
+
 /* Modal star click */
 document.addEventListener('click', e => {
   const star = e.target.closest('.star');
@@ -420,16 +525,32 @@ document.addEventListener('click', e => {
   renderModalStatus(status);
 });
 
+/* Modal platform pill click */
+document.addEventListener('click', e => {
+  const pill = e.target.closest('.modal-platform-pill');
+  if (!pill || !_modalIdx) return;
+  const platform = pill.dataset.p || '';
+  const { idx, source } = _modalIdx;
+  setPlatform(idx, platform, source);
+  renderModalPlatform(platform);
+});
+
 /* Modal close button + overlay click */
 document.addEventListener('click', e => {
   if (e.target.id === 'modalClose') { closeModal(); return; }
   if (e.target.id === 'detailModal') { closeModal(); return; }
+  if (e.target.id === 'trailerModal' || e.target.id === 'trailerClose') { closeTrailerModal(); return; }
 });
 
 /* Close on Escape */
 document.addEventListener('keydown', e => {
-  if (e.key === 'Escape') closeModal();
+  if (e.key === 'Escape') {
+    closeTrailerModal();
+    closeModal();
+  }
 });
+
+document.getElementById('modalClose')?.addEventListener('click', closeModal);
 
 /* Watchlist add from modal */
 function modalAddToWatchlist() {
@@ -475,6 +596,7 @@ async function fetchMedia(query, type) {
           type:       'anime',
           status:     'Planned',
           starRating: 0,
+          platform:   '',
         };
       }
     } else {
@@ -492,6 +614,7 @@ async function fetchMedia(query, type) {
           type,
           status:     'Planned',
           starRating: 0,
+          platform:   '',
         };
       }
     }
@@ -748,6 +871,7 @@ function exportExcel() {
     Rating:     i.rating,
     StarRating: i.starRating || 0,
     Status:     i.status || 'Planned',
+    Platform:   i.platform || '',
     Poster:     i.poster || '',
   }));
   const wb = XLSX.utils.book_new();
@@ -781,6 +905,7 @@ if (importInput) {
             starRating: parseInt(row.StarRating||0, 10) || 0,
             poster:     String(row.Poster||''),
             status:     String(row.Status||'Planned'),
+            platform:   String(row.Platform||''),
             overview:   '',
           };
           if (!item.title) return;
@@ -806,7 +931,7 @@ function clearLibrary() {
   render();
   ['moviesGrid','seriesGrid','animeGrid'].forEach(id => {
     const g = document.getElementById(id);
-    if (g) g.innerHTML = "<p class='placeholder-msg'>Nothing here yet.</p>";
+    if (g) g.innerHTML = "<p class='placeholder-msg'>Nothing here yet — add some!</p>";
   });
   showToast('Library cleared');
 }

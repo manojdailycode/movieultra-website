@@ -25,4 +25,4 @@ HTML · CSS · Vanilla JS · TMDB API · Jikan API · Vercel
 3. `npm start` → open `http://localhost:8000`
 
 ## Author
-Manoj Kumar · v1.3.0
+Manoj Kumar · v1.4.0
