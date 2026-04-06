@@ -1,6 +1,6 @@
 {
   "name": "movieultra-webapp",
-  "version": "1.1.0",
+  "version": "1.3.0",
   "description": "A professional movie tracking web app for managing personal library of movies, series, and anime.",
   "main": "index.html",
   "scripts": {

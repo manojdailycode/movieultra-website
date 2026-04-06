@@ -1,4 +1,6 @@
-const VERSION = "1.2.0";
+'use strict';
+
+const VERSION = "1.3.0";
 
 /* ── STORAGE KEYS ───────────────────────────── */
 const SK = {
@@ -7,17 +9,13 @@ const SK = {
   theme:     'mu_theme',
 };
 
-/* ── MIGRATE old v4_pro_db → mu_lib_v1 ─────── */
+/* ── MIGRATE old keys ───────────────────────── */
 (function migrate() {
   if (localStorage.getItem('mu_migrated_v1')) return;
-  const old = localStorage.getItem('v4_pro_db');
-  if (old && !localStorage.getItem(SK.lib)) {
-    localStorage.setItem(SK.lib, old);
-  }
+  const old   = localStorage.getItem('v4_pro_db');
   const oldWl = localStorage.getItem('mu_watchlist');
-  if (oldWl && !localStorage.getItem(SK.watchlist)) {
-    localStorage.setItem(SK.watchlist, oldWl);
-  }
+  if (old   && !localStorage.getItem(SK.lib))       localStorage.setItem(SK.lib, old);
+  if (oldWl && !localStorage.getItem(SK.watchlist)) localStorage.setItem(SK.watchlist, oldWl);
   localStorage.setItem('mu_migrated_v1', '1');
 })();
 
@@ -32,13 +30,22 @@ const STATUS_LABELS = {
 /* ── STATE ──────────────────────────────────── */
 let library   = JSON.parse(localStorage.getItem(SK.lib))      || [];
 let watchlist = JSON.parse(localStorage.getItem(SK.watchlist)) || [];
-let activeType = 'movie';
-let librarySearch = '';
-let librarySortBy = 'recent';
+let activeType          = 'movie';
+let librarySearch       = '';
+let librarySortBy       = 'recent';
 let libraryStatusFilter = 'All';
+let _modalIdx           = null;   // index of item currently open in modal
 
-/* Ensure all items have status field */
-library = library.map(i => ({ status: 'Planned', ...i }));
+/* Ensure all items have required fields */
+library = library.map(i => ({
+  status:     'Planned',
+  starRating: 0,
+  ...i,
+}));
+
+/* ── SAVE HELPERS ───────────────────────────── */
+function saveLib()  { localStorage.setItem(SK.lib, JSON.stringify(library)); }
+function saveWl()   { localStorage.setItem(SK.watchlist, JSON.stringify(watchlist)); }
 
 /* ── TOAST ──────────────────────────────────── */
 function showToast(msg) {
@@ -63,34 +70,30 @@ function toggleSidebar() {
 /* ── THEME ──────────────────────────────────── */
 function toggleTheme() {
   document.body.classList.toggle('dark-mode');
-  localStorage.setItem(SK.theme,
-    document.body.classList.contains('dark-mode') ? 'dark' : 'light');
+  localStorage.setItem(SK.theme, document.body.classList.contains('dark-mode') ? 'dark' : 'light');
 }
-if (localStorage.getItem(SK.theme) === 'dark') {
-  document.body.classList.add('dark-mode');
-}
+if (localStorage.getItem(SK.theme) === 'dark') document.body.classList.add('dark-mode');
 
 /* ── TYPE CHIPS ─────────────────────────────── */
 function setType(type) {
   activeType = type;
   document.querySelectorAll('.chip').forEach(c => c.classList.remove('active'));
-  document.getElementById(`chip-${type}`).classList.add('active');
+  document.getElementById(`chip-${type}`)?.classList.add('active');
 }
 
 /* ── NAVIGATION ─────────────────────────────── */
 function showView(viewName) {
   document.querySelectorAll('.view-section').forEach(s => s.classList.remove('active'));
-  const target = document.getElementById(`view-${viewName}`) || document.getElementById('view-home');
-  target.classList.add('active');
-  document.getElementById('pageTitle').innerText = viewName.toUpperCase();
-  document.getElementById('searchContainer').style.display = (viewName === 'home') ? 'block' : 'none';
+  (document.getElementById(`view-${viewName}`) || document.getElementById('view-home'))
+    .classList.add('active');
 
-  document.querySelectorAll('.sb-item[data-view]').forEach(el => {
-    el.classList.toggle('active', el.dataset.view === viewName);
-  });
-  document.querySelectorAll('.b-item[data-view]').forEach(el => {
-    el.classList.toggle('active', el.dataset.view === viewName);
-  });
+  document.getElementById('pageTitle').innerText = viewName.toUpperCase();
+  document.getElementById('searchContainer').style.display = viewName === 'home' ? 'block' : 'none';
+
+  document.querySelectorAll('.sb-item[data-view]').forEach(el =>
+    el.classList.toggle('active', el.dataset.view === viewName));
+  document.querySelectorAll('.b-item[data-view]').forEach(el =>
+    el.classList.toggle('active', el.dataset.view === viewName));
 
   if (viewName === 'trending')  loadTrending();
   if (viewName === 'analytics') loadStats();
@@ -104,34 +107,17 @@ function showView(viewName) {
   document.getElementById('overlay').classList.remove('active');
 }
 
-/* ── LIBRARY QUERY (SEARCH/FILTER/SORT) ─────── */
-function normalizeText(v) {
-  return String(v || '').trim().toLowerCase();
-}
-
-function ratingValue(v) {
-  const n = Number.parseFloat(v);
-  return Number.isFinite(n) ? n : -1;
-}
-
-function yearValue(v) {
-  const n = Number.parseInt(v, 10);
-  return Number.isFinite(n) ? n : 0;
-}
-
+/* ── QUERY ENGINE ───────────────────────────── */
 function getProcessedLibrary(type = null) {
   let items = library.map((item, idx) => ({ item, idx }));
+  if (type) items = items.filter(({ item }) => item.type === type);
 
-  if (type) {
-    items = items.filter(({ item }) => item.type === type);
-  }
-
-  const q = normalizeText(librarySearch);
+  const q = (librarySearch || '').trim().toLowerCase();
   if (q) {
-    items = items.filter(({ item }) => {
-      const hay = [item.title, item.year, item.type, item.status].map(normalizeText).join(' ');
-      return hay.includes(q);
-    });
+    items = items.filter(({ item }) =>
+      [item.title, item.year, item.type, item.status]
+        .map(v => String(v || '').toLowerCase()).join(' ').includes(q)
+    );
   }
 
   if (libraryStatusFilter !== 'All') {
@@ -139,25 +125,32 @@ function getProcessedLibrary(type = null) {
   }
 
   if (librarySortBy === 'rating') {
-    items.sort((a, b) => ratingValue(b.item.rating) - ratingValue(a.item.rating) || a.idx - b.idx);
+    items.sort((a, b) => {
+      const n = v => { const x = parseFloat(v); return isFinite(x) ? x : -1; };
+      return n(b.item.rating) - n(a.item.rating) || a.idx - b.idx;
+    });
   } else if (librarySortBy === 'year') {
-    items.sort((a, b) => yearValue(b.item.year) - yearValue(a.item.year) || a.idx - b.idx);
+    items.sort((a, b) => {
+      const n = v => { const x = parseInt(v, 10); return isFinite(x) ? x : 0; };
+      return n(b.item.year) - n(a.item.year) || a.idx - b.idx;
+    });
   } else {
-    items.sort((a, b) => a.idx - b.idx); // recently added (unshift keeps newest at index 0)
+    items.sort((a, b) => a.idx - b.idx);
   }
-
   return items;
 }
 
+/* ── LIBRARY TOOLS ──────────────────────────── */
 function ensureLibraryTools() {
+  if (document.getElementById('libraryTools')) return;
   const host = document.getElementById('searchContainer');
-  if (!host || document.getElementById('libraryTools')) return;
+  if (!host) return;
 
   const tools = document.createElement('div');
   tools.id = 'libraryTools';
   tools.className = 'library-tools';
   tools.innerHTML = `
-    <input id="librarySearchInput" class="library-tool-input" type="text" placeholder="Search inside library…" />
+    <input id="librarySearchInput" class="library-tool-input" type="text" placeholder="Search inside library…">
     <select id="librarySortSelect" class="library-tool-select">
       <option value="recent">⏱ Recently Added</option>
       <option value="rating">⭐ Rating</option>
@@ -170,91 +163,79 @@ function ensureLibraryTools() {
       <option value="Completed">✅ Completed</option>
       <option value="Dropped">❌ Dropped</option>
     </select>
-    <button id="libraryToolsReset" class="library-tool-btn">Reset</button>
-  `;
-
+    <button id="libraryToolsReset" class="library-tool-btn">Reset</button>`;
   host.appendChild(tools);
 
-  const searchEl = document.getElementById('librarySearchInput');
-  const sortEl = document.getElementById('librarySortSelect');
-  const statusEl = document.getElementById('libraryStatusSelect');
-  const resetEl = document.getElementById('libraryToolsReset');
+  const rerender = () => {
+    render();
+    renderFiltered('movie', 'moviesGrid');
+    renderFiltered('tv',    'seriesGrid');
+    renderFiltered('anime', 'animeGrid');
+  };
 
-  if (searchEl) {
-    searchEl.addEventListener('input', e => {
-      librarySearch = e.target.value || '';
-      render();
-      renderFiltered('movie', 'moviesGrid');
-      renderFiltered('tv', 'seriesGrid');
-      renderFiltered('anime', 'animeGrid');
-    });
-  }
-
-  if (sortEl) {
-    sortEl.addEventListener('change', e => {
-      librarySortBy = e.target.value || 'recent';
-      render();
-      renderFiltered('movie', 'moviesGrid');
-      renderFiltered('tv', 'seriesGrid');
-      renderFiltered('anime', 'animeGrid');
-    });
-  }
-
-  if (statusEl) {
-    statusEl.addEventListener('change', e => {
-      libraryStatusFilter = e.target.value || 'All';
-      render();
-      renderFiltered('movie', 'moviesGrid');
-      renderFiltered('tv', 'seriesGrid');
-      renderFiltered('anime', 'animeGrid');
-    });
-  }
-
-  if (resetEl) {
-    resetEl.addEventListener('click', () => {
-      librarySearch = '';
-      librarySortBy = 'recent';
-      libraryStatusFilter = 'All';
-      if (searchEl) searchEl.value = '';
-      if (sortEl) sortEl.value = 'recent';
-      if (statusEl) statusEl.value = 'All';
-      render();
-      renderFiltered('movie', 'moviesGrid');
-      renderFiltered('tv', 'seriesGrid');
-      renderFiltered('anime', 'animeGrid');
-      showToast('Library filters reset');
-    });
-  }
+  document.getElementById('librarySearchInput').addEventListener('input', e => {
+    librarySearch = e.target.value || '';
+    rerender();
+  });
+  document.getElementById('librarySortSelect').addEventListener('change', e => {
+    librarySortBy = e.target.value;
+    rerender();
+  });
+  document.getElementById('libraryStatusSelect').addEventListener('change', e => {
+    libraryStatusFilter = e.target.value;
+    rerender();
+  });
+  document.getElementById('libraryToolsReset').addEventListener('click', () => {
+    librarySearch = ''; librarySortBy = 'recent'; libraryStatusFilter = 'All';
+    document.getElementById('librarySearchInput').value = '';
+    document.getElementById('librarySortSelect').value  = 'recent';
+    document.getElementById('libraryStatusSelect').value = 'All';
+    rerender();
+    showToast('Filters reset');
+  });
 }
 
-/* ── CARD BUILDER (shared) ──────────────────── */
-function buildCard({ item, idx, actions = [], showStatus = true }) {
+function filterView(type, gridId, query) {
+  const saved = librarySearch;
+  librarySearch = query || '';
+  renderFiltered(type, gridId);
+  librarySearch = saved;
+}
+
+/* ── CARD BUILDER ───────────────────────────── */
+function buildCard({ item, idx, actions = [], showStatus = true, source = 'library' }) {
   const status = item.status || 'Planned';
-  const s = STATUS_LABELS[status] || STATUS_LABELS.Planned;
+  const s      = STATUS_LABELS[status] || STATUS_LABELS.Planned;
+  const stars  = item.starRating || 0;
+  const starBar = stars > 0
+    ? `<div class="card-stars">${'★'.repeat(stars)}${'☆'.repeat(5 - stars)}</div>` : '';
 
   const statusBadge = showStatus
     ? `<div class="status-badge" style="background:${s.color}">${s.icon} ${status}</div>` : '';
 
   const statusSelect = showStatus ? `
-    <select class="status-select" data-idx="${idx}" onchange="setStatus(${idx}, this.value, '${actions[0]?.grid || ''}')">
+    <select class="status-select" onchange="setStatus(${idx},this.value,'${source}')">
       <option value="Planned"   ${status==='Planned'   ?'selected':''}>📋 Planned</option>
       <option value="Watching"  ${status==='Watching'  ?'selected':''}>👁 Watching</option>
       <option value="Completed" ${status==='Completed' ?'selected':''}>✅ Completed</option>
       <option value="Dropped"   ${status==='Dropped'   ?'selected':''}>❌ Dropped</option>
     </select>` : '';
 
-  const btns = actions.map(a => `<button class="${a.cls}" onclick="${a.fn}">${a.label}</button>`).join('');
+  const btns = actions.map(a =>
+    `<button class="${a.cls}" onclick="${a.fn}">${a.label}</button>`).join('');
 
   return `
-    <div class="movie-card">
+    <div class="movie-card" onclick="openModal(${idx},'${source}')" style="cursor:pointer">
       <div class="poster-container">
-        <img src="${item.poster || ''}" alt="${item.title.replace(/"/g,'&quot;')}" loading="lazy" onerror="this.src=''">
-        <div class="badge">★ ${item.rating || 'N/A'}</div>
+        <img src="${item.poster||''}" alt="${(item.title||'').replace(/"/g,'&quot;')}"
+             loading="lazy" onerror="this.src=''">
+        <div class="badge">★ ${item.rating||'N/A'}</div>
         ${statusBadge}
       </div>
-      <div class="card-details">
-        <h3 title="${item.title.replace(/"/g,'&quot;')}">${item.title}</h3>
-        <p class="card-meta">${item.year || 'N/A'} · ${(item.type||'').toUpperCase()}</p>
+      <div class="card-details" onclick="event.stopPropagation()">
+        <h3 title="${(item.title||'').replace(/"/g,'&quot;')}">${item.title||''}</h3>
+        <p class="card-meta">${item.year||'N/A'} · ${(item.type||'').toUpperCase()}</p>
+        ${starBar}
         ${statusSelect}
         <div class="card-actions">${btns}</div>
       </div>
@@ -262,16 +243,219 @@ function buildCard({ item, idx, actions = [], showStatus = true }) {
 }
 
 /* ── STATUS UPDATE ──────────────────────────── */
-function setStatus(idx, status, gridId) {
-  if (!library[idx]) return;
-  library[idx] = { ...library[idx], status };
-  localStorage.setItem(SK.lib, JSON.stringify(library));
+function setStatus(idx, status, source) {
+  const arr = source === 'watchlist' ? watchlist : library;
+  if (!arr[idx]) return;
+  arr[idx] = { ...arr[idx], status };
+  source === 'watchlist' ? saveWl() : saveLib();
   showToast(`Status → ${status}`);
   render();
-  if (gridId) {
-    const type = library[idx]?.type;
-    if (type) renderFiltered(type, gridId);
+  renderFiltered('movie', 'moviesGrid');
+  renderFiltered('tv',    'seriesGrid');
+  renderFiltered('anime', 'animeGrid');
+  if (source === 'watchlist') renderWatchlist();
+}
+
+/* ══════════════════════════════════════════════
+   DETAIL MODAL
+══════════════════════════════════════════════ */
+
+function openModal(idx, source) {
+  source = source || 'library';
+  const arr = source === 'watchlist' ? watchlist : library;
+  const item = arr[idx];
+  if (!item) return;
+  _modalIdx = { idx, source };
+
+  const modal = document.getElementById('detailModal');
+  if (!modal) return;
+  modal.classList.remove('hidden');
+  document.body.style.overflow = 'hidden';
+
+  /* Fill static fields immediately */
+  document.getElementById('modalTitle').textContent    = item.title || '';
+  document.getElementById('modalOverview').textContent = item.overview || 'No overview available.';
+  document.getElementById('modalBackdrop').src         = item.backdrop || item.poster || '';
+  document.getElementById('modalPills').innerHTML      = buildModalPills(item);
+  document.getElementById('modalGenres').innerHTML     = (item.genres || [])
+    .map(g => `<span class="genre-tag">${g}</span>`).join('');
+
+  /* Star rating */
+  renderModalStars(item.starRating || 0);
+
+  /* Status pills */
+  renderModalStatus(item.status || 'Planned');
+
+  /* Footer */
+  document.getElementById('modalFoot').innerHTML = buildModalFoot(source);
+
+  /* Fetch extra details from TMDB if item is movie or tv and has no overview */
+  if ((item.type === 'movie' || item.type === 'tv') && (!item.overview || !item.backdrop)) {
+    fetchItemDetails(item, idx, source);
   }
+}
+
+function buildModalPills(item) {
+  const pills = [];
+  const typeLabel = item.type === 'tv' ? 'Series' : item.type
+    ? item.type.charAt(0).toUpperCase() + item.type.slice(1) : '';
+  if (typeLabel)  pills.push(`<span class="modal-pill">${typeLabel}</span>`);
+  if (item.year)  pills.push(`<span class="modal-pill">${item.year}</span>`);
+  if (item.rating && item.rating !== 'N/A')
+    pills.push(`<span class="modal-pill gold">★ ${item.rating}</span>`);
+  return pills.join('');
+}
+
+function buildModalFoot(source) {
+  if (source === 'watchlist') {
+    return `
+      <button class="modal-btn-primary" onclick="modalAddToLibrary()">+ Add to Library</button>
+      <button class="modal-btn-ghost"   onclick="closeModal()">Close</button>`;
+  }
+  return `
+    <button class="modal-btn-primary" onclick="modalAddToWatchlist()">⭐ Watchlist</button>
+    <button class="modal-btn-ghost"   onclick="closeModal()">Close</button>`;
+}
+
+function closeModal() {
+  document.getElementById('detailModal')?.classList.add('hidden');
+  document.body.style.overflow = '';
+  _modalIdx = null;
+}
+
+/* Fetch extra TMDB details for movie/tv */
+async function fetchItemDetails(item, idx, source) {
+  try {
+    let data, backdrop, overview, genres = [];
+
+    if (item.type === 'movie' || item.type === 'tv') {
+      /* search for id first, then get details */
+      const searchPath = item.type === 'movie' ? 'search/movie' : 'search/tv';
+      const sr = await fetch(`/api/tmdb?path=${searchPath}&query=${encodeURIComponent(item.title)}`);
+      const sd = await sr.json();
+      const first = sd.results?.[0];
+      if (!first) return;
+
+      const detailPath = item.type === 'movie' ? `movie/${first.id}` : `tv/${first.id}`;
+      const dr = await fetch(`/api/tmdb?path=${detailPath}`);
+      data = await dr.json();
+
+      backdrop = data.backdrop_path
+        ? `https://image.tmdb.org/t/p/w780${data.backdrop_path}` : item.poster || '';
+      overview = data.overview || item.overview || '';
+      genres   = (data.genres || []).map(g => g.name);
+    }
+
+    if (!backdrop && !overview) return;
+
+    /* Update UI if modal still open for same item */
+    if (_modalIdx && _modalIdx.idx === idx && _modalIdx.source === source) {
+      if (backdrop) {
+        const img = document.getElementById('modalBackdrop');
+        if (img) img.src = backdrop;
+      }
+      if (overview) {
+        const ov = document.getElementById('modalOverview');
+        if (ov && ov.textContent === 'No overview available.') ov.textContent = overview;
+      }
+      if (genres.length) {
+        const gEl = document.getElementById('modalGenres');
+        if (gEl) gEl.innerHTML = genres.map(g => `<span class="genre-tag">${g}</span>`).join('');
+      }
+    }
+
+    /* Persist to library for next time */
+    const arr = source === 'watchlist' ? watchlist : library;
+    if (arr[idx]) {
+      arr[idx] = { ...arr[idx], backdrop, overview, genres };
+      source === 'watchlist' ? saveWl() : saveLib();
+    }
+  } catch(e) { /* silently ignore */ }
+}
+
+/* Star rating UI */
+function renderModalStars(current) {
+  const container = document.getElementById('modalStars');
+  const hint      = document.getElementById('starHint');
+  if (!container) return;
+  container.querySelectorAll('.star').forEach(btn => {
+    const v = parseInt(btn.dataset.v, 10);
+    btn.classList.toggle('active', v <= current);
+  });
+  if (hint) hint.textContent = current > 0 ? `${current} / 5` : 'Tap to rate';
+}
+
+/* Status pills inside modal */
+function renderModalStatus(current) {
+  document.querySelectorAll('.modal-status-pill').forEach(btn => {
+    btn.classList.toggle('active', btn.dataset.s === current);
+  });
+}
+
+/* Modal star click */
+document.addEventListener('click', e => {
+  const star = e.target.closest('.star');
+  if (!star || !_modalIdx) return;
+  const v      = parseInt(star.dataset.v, 10);
+  const { idx, source } = _modalIdx;
+  const arr    = source === 'watchlist' ? watchlist : library;
+  if (!arr[idx]) return;
+  arr[idx] = { ...arr[idx], starRating: v };
+  source === 'watchlist' ? saveWl() : saveLib();
+  renderModalStars(v);
+  render();
+  renderFiltered('movie', 'moviesGrid');
+  renderFiltered('tv',    'seriesGrid');
+  renderFiltered('anime', 'animeGrid');
+  showToast(`Rated ${v} ★`);
+});
+
+/* Modal status pill click */
+document.addEventListener('click', e => {
+  const pill = e.target.closest('.modal-status-pill');
+  if (!pill || !_modalIdx) return;
+  const status = pill.dataset.s;
+  const { idx, source } = _modalIdx;
+  setStatus(idx, status, source);
+  renderModalStatus(status);
+});
+
+/* Modal close button + overlay click */
+document.addEventListener('click', e => {
+  if (e.target.id === 'modalClose') { closeModal(); return; }
+  if (e.target.id === 'detailModal') { closeModal(); return; }
+});
+
+/* Close on Escape */
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') closeModal();
+});
+
+/* Watchlist add from modal */
+function modalAddToWatchlist() {
+  if (!_modalIdx) return;
+  const { idx } = _modalIdx;
+  const item = library[idx];
+  if (!item) return;
+  const dup = watchlist.some(w => w.title === item.title && w.type === item.type);
+  if (dup) { showToast('Already in watchlist'); return; }
+  watchlist.unshift({ ...item });
+  saveWl();
+  showToast('Saved to watchlist ⭐');
+}
+
+function modalAddToLibrary() {
+  if (!_modalIdx) return;
+  const { idx } = _modalIdx;
+  const item = watchlist[idx];
+  if (!item) return;
+  const dup = library.some(l => l.title === item.title && l.type === item.type);
+  if (dup) { showToast('Already in library'); return; }
+  library.unshift({ ...item });
+  saveLib();
+  render();
+  showToast(`"${item.title}" added to library ✅`);
+  closeModal();
 }
 
 /* ── API ────────────────────────────────────── */
@@ -283,12 +467,14 @@ async function fetchMedia(query, type) {
       if (data.data?.length > 0) {
         const a = data.data[0];
         return {
-          title:  a.title,
-          year:   a.aired?.prop?.from?.year || 'N/A',
-          rating: a.score ? String(a.score) : 'N/A',
-          poster: a.images?.jpg?.large_image_url || '',
-          type:   'anime',
-          status: 'Planned',
+          title:      a.title,
+          year:       a.aired?.prop?.from?.year || 'N/A',
+          rating:     a.score ? String(parseFloat(a.score).toFixed(1)) : 'N/A',
+          poster:     a.images?.jpg?.large_image_url || '',
+          overview:   a.synopsis || '',
+          type:       'anime',
+          status:     'Planned',
+          starRating: 0,
         };
       }
     } else {
@@ -297,12 +483,15 @@ async function fetchMedia(query, type) {
       if (data.results?.length > 0) {
         const r = data.results[0];
         return {
-          title:  r.title || r.name,
-          year:   (r.release_date || r.first_air_date || 'N/A').split('-')[0],
-          rating: r.vote_average != null ? r.vote_average.toFixed(1) : 'N/A',
-          poster: r.poster_path ? `https://image.tmdb.org/t/p/w500${r.poster_path}` : '',
+          title:      r.title || r.name,
+          year:       (r.release_date || r.first_air_date || 'N/A').split('-')[0],
+          rating:     r.vote_average != null ? r.vote_average.toFixed(1) : 'N/A',
+          poster:     r.poster_path ? `https://image.tmdb.org/t/p/w500${r.poster_path}` : '',
+          backdrop:   r.backdrop_path ? `https://image.tmdb.org/t/p/w780${r.backdrop_path}` : '',
+          overview:   r.overview || '',
           type,
-          status: 'Planned',
+          status:     'Planned',
+          starRating: 0,
         };
       }
     }
@@ -312,19 +501,20 @@ async function fetchMedia(query, type) {
 
 /* ── SEARCH ─────────────────────────────────── */
 async function handleSearch() {
-  const input  = document.getElementById('smartInput');
-  const btn    = document.getElementById('searchTrigger');
-  const query  = input.value.trim();
+  const input = document.getElementById('smartInput');
+  const btn   = document.getElementById('searchTrigger');
+  const query = input.value.trim();
   if (!query) return;
   btn.disabled    = true;
   btn.textContent = '…';
   try {
     const result = await fetchMedia(query, activeType);
     if (result) {
-      const exists = library.some(l => l.title === result.title && l.type === result.type);
-      if (exists) { showToast('Already in library'); return; }
+      if (library.some(l => l.title === result.title && l.type === result.type)) {
+        showToast('Already in library'); return;
+      }
       library.unshift(result);
-      localStorage.setItem(SK.lib, JSON.stringify(library));
+      saveLib();
       render();
       input.value = '';
       showToast(`"${result.title}" added ✅`);
@@ -347,19 +537,20 @@ async function loadTrending() {
   const grid = document.getElementById('trendingGrid');
   grid.innerHTML = "<p class='placeholder-msg'>Loading…</p>";
   try {
-    const res  = await fetch('/api/tmdb?path=trending/all/day');
-    const data = await res.json();
+    const res   = await fetch('/api/tmdb?path=trending/all/day');
+    const data  = await res.json();
     const items = data.results || [];
     if (!items.length) { grid.innerHTML = "<p class='placeholder-msg'>No results.</p>"; return; }
     grid.innerHTML = items.map(item => {
       const type  = item.media_type === 'movie' ? 'movie' : 'tv';
       const title = item.title || item.name || '';
-      const safe  = title.replace(/\\/g,'\\\\').replace(/'/g,"\\'");
+      const safe  = title.replace(/\\/g, '\\\\').replace(/'/g, "\\'");
       return `
         <div class="movie-card">
           <div class="poster-container">
-            <img src="https://image.tmdb.org/t/p/w500${item.poster_path || ''}" loading="lazy" onerror="this.src=''">
-            <div class="badge">★ ${item.vote_average?.toFixed(1) || 'N/A'}</div>
+            <img src="https://image.tmdb.org/t/p/w500${item.poster_path||''}"
+                 loading="lazy" onerror="this.src=''">
+            <div class="badge">★ ${item.vote_average?.toFixed(1)||'N/A'}</div>
           </div>
           <div class="card-details">
             <h3 title="${title.replace(/"/g,'&quot;')}">${title}</h3>
@@ -378,10 +569,11 @@ async function loadTrending() {
 async function quickAdd(title, type) {
   const result = await fetchMedia(title, type);
   if (!result) { showToast('Could not add — try again'); return; }
-  const exists = library.some(l => l.title === result.title && l.type === result.type);
-  if (exists) { showToast('Already in library'); return; }
+  if (library.some(l => l.title === result.title && l.type === result.type)) {
+    showToast('Already in library'); return;
+  }
   library.unshift(result);
-  localStorage.setItem(SK.lib, JSON.stringify(library));
+  saveLib();
   showToast(`"${result.title}" added ✅`);
   render();
 }
@@ -401,11 +593,10 @@ function render() {
   }
   grid.innerHTML = items.map(({ item, idx }) =>
     buildCard({
-      item, idx,
-      showStatus: true,
+      item, idx, source: 'library',
       actions: [
-        { label: '⭐ Watchlist', cls: 'btn-add',    fn: `addToWatchlist(${idx})` },
-        { label: '🗑 Remove',    cls: 'btn-remove',  fn: `remove(${idx})` },
+        { label: '⭐ Watchlist', cls: 'btn-add',   fn: `addToWatchlist(${idx})` },
+        { label: '🗑 Remove',   cls: 'btn-remove', fn: `remove(${idx})` },
       ],
     })
   ).join('');
@@ -414,7 +605,7 @@ function render() {
 /* ── REMOVE ─────────────────────────────────── */
 function remove(idx) {
   library.splice(idx, 1);
-  localStorage.setItem(SK.lib, JSON.stringify(library));
+  saveLib();
   render();
   showToast('Removed from library');
 }
@@ -423,18 +614,31 @@ function remove(idx) {
 function addToWatchlist(idx) {
   const item = library[idx];
   if (!item) return;
-  const exists = watchlist.some(w => w.title === item.title && w.type === item.type);
-  if (exists) { showToast('Already in watchlist'); return; }
+  if (watchlist.some(w => w.title === item.title && w.type === item.type)) {
+    showToast('Already in watchlist'); return;
+  }
   watchlist.unshift({ ...item });
-  localStorage.setItem(SK.watchlist, JSON.stringify(watchlist));
+  saveWl();
   showToast('Saved to watchlist ⭐');
 }
 
 function removeFromWatchlist(idx) {
   watchlist.splice(idx, 1);
-  localStorage.setItem(SK.watchlist, JSON.stringify(watchlist));
+  saveWl();
   renderWatchlist();
   showToast('Removed from watchlist');
+}
+
+function addFromWatchlist(idx) {
+  const item = watchlist[idx];
+  if (!item) return;
+  if (library.some(l => l.title === item.title && l.type === item.type)) {
+    showToast('Already in library'); return;
+  }
+  library.unshift({ ...item });
+  saveLib();
+  render();
+  showToast(`"${item.title}" added to library ✅`);
 }
 
 function renderWatchlist() {
@@ -446,25 +650,13 @@ function renderWatchlist() {
   }
   grid.innerHTML = watchlist.map((item, idx) =>
     buildCard({
-      item, idx,
-      showStatus: true,
+      item, idx, source: 'watchlist',
       actions: [
-        { label: '+ Library',  cls: 'btn-add',   fn: `addFromWatchlist(${idx})` },
-        { label: '🗑 Remove',  cls: 'btn-remove', fn: `removeFromWatchlist(${idx})` },
+        { label: '+ Library', cls: 'btn-add',   fn: `addFromWatchlist(${idx})` },
+        { label: '🗑 Remove', cls: 'btn-remove', fn: `removeFromWatchlist(${idx})` },
       ],
     })
   ).join('');
-}
-
-function addFromWatchlist(idx) {
-  const item = watchlist[idx];
-  if (!item) return;
-  const exists = library.some(l => l.title === item.title && l.type === item.type);
-  if (exists) { showToast('Already in library'); return; }
-  library.unshift({ ...item });
-  localStorage.setItem(SK.lib, JSON.stringify(library));
-  render();
-  showToast(`"${item.title}" added to library ✅`);
 }
 
 /* ── FILTERED VIEWS ─────────────────────────── */
@@ -480,8 +672,7 @@ function renderFiltered(type, gridId) {
   }
   grid.innerHTML = items.map(({ item, idx }) =>
     buildCard({
-      item, idx,
-      showStatus: true,
+      item, idx, source: 'library',
       actions: [
         { label: '🗑 Remove', cls: 'btn-remove', fn: `removeFiltered(${idx},'${gridId}')` },
       ],
@@ -492,7 +683,7 @@ function renderFiltered(type, gridId) {
 function removeFiltered(idx, gridId) {
   const type = library[idx]?.type;
   library.splice(idx, 1);
-  localStorage.setItem(SK.lib, JSON.stringify(library));
+  saveLib();
   render();
   if (type && gridId) renderFiltered(type, gridId);
   showToast('Removed');
@@ -506,17 +697,20 @@ function loadStats() {
     return;
   }
   const total = library.length;
-  const tc = library.reduce((a, i) => { a[i.type] = (a[i.type]||0)+1; return a; }, {movie:0,tv:0,anime:0});
+  const tc = library.reduce((a, i) => { a[i.type]=(a[i.type]||0)+1; return a; }, {movie:0,tv:0,anime:0});
   const sc = library.reduce((a, i) => {
-    const s = i.status || 'Planned';
-    a[s] = (a[s]||0)+1; return a;
-  }, {Planned:0, Watching:0, Completed:0, Dropped:0});
+    const s = i.status||'Planned'; a[s]=(a[s]||0)+1; return a;
+  }, {Planned:0,Watching:0,Completed:0,Dropped:0});
+  const rated = library.filter(i => i.starRating > 0);
+  const avgStar = rated.length
+    ? (rated.reduce((s,i) => s + i.starRating, 0) / rated.length).toFixed(1) : '—';
 
   const bar = (count, color) =>
-    `<div style="width:${total ? (count/total)*100 : 0}%;background:${color};height:100%;border-radius:50px;transition:width 0.5s"></div>`;
+    `<div style="width:${total?(count/total)*100:0}%;background:${color};height:100%;border-radius:50px;transition:width .5s"></div>`;
 
   container.innerHTML = `
     <div class="stats-row"><span>Total Items</span><strong>${total}</strong></div>
+    <div class="stats-row"><span>Avg Star Rating</span><strong>${avgStar} ★</strong></div>
 
     <p class="stats-label">By Type</p>
     <div class="stats-bar-wrap">
@@ -544,16 +738,17 @@ function loadStats() {
     </div>`;
 }
 
-/* ── EXCEL EXPORT ───────────────────────────── */
+/* ── EXCEL ──────────────────────────────────── */
 function exportExcel() {
   if (!window.XLSX) { showToast('SheetJS not loaded ❌'); return; }
   const rows = library.map(i => ({
-    Title:  i.title,
-    Type:   i.type,
-    Year:   i.year,
-    Rating: i.rating,
-    Status: i.status || 'Planned',
-    Poster: i.poster || '',
+    Title:      i.title,
+    Type:       i.type,
+    Year:       i.year,
+    Rating:     i.rating,
+    StarRating: i.starRating || 0,
+    Status:     i.status || 'Planned',
+    Poster:     i.poster || '',
   }));
   const wb = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(rows), 'Library');
@@ -561,10 +756,7 @@ function exportExcel() {
   showToast('Exported ✅');
 }
 
-/* ── EXCEL IMPORT ───────────────────────────── */
-function importExcel() {
-  document.getElementById('importFile')?.click();
-}
+function importExcel() { document.getElementById('importFile')?.click(); }
 
 const importInput = document.getElementById('importFile');
 if (importInput) {
@@ -579,26 +771,27 @@ if (importInput) {
         const rows = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]]);
         let added  = 0;
         rows.forEach(row => {
-          const rawType = String(row.Type || 'movie').toLowerCase();
+          const rawType = String(row.Type||'movie').toLowerCase();
           const type    = rawType === 'series' ? 'tv' : rawType;
-          const item    = {
-            title:  String(row.Title  || '').trim(),
-            type:   ['movie','tv','anime'].includes(type) ? type : 'movie',
-            year:   String(row.Year   || 'N/A'),
-            rating: String(row.Rating || 'N/A'),
-            poster: String(row.Poster || ''),
-            status: String(row.Status || 'Planned'),
+          const item = {
+            title:      String(row.Title||'').trim(),
+            type:       ['movie','tv','anime'].includes(type) ? type : 'movie',
+            year:       String(row.Year||'N/A'),
+            rating:     String(row.Rating||'N/A'),
+            starRating: parseInt(row.StarRating||0, 10) || 0,
+            poster:     String(row.Poster||''),
+            status:     String(row.Status||'Planned'),
+            overview:   '',
           };
           if (!item.title) return;
-          const dup = library.some(l => l.title === item.title && l.type === item.type);
-          if (!dup) { library.unshift(item); added++; }
+          if (!library.some(l => l.title===item.title && l.type===item.type)) {
+            library.unshift(item); added++;
+          }
         });
-        localStorage.setItem(SK.lib, JSON.stringify(library));
+        saveLib();
         render();
-        showToast(`Imported ${added} item${added !== 1 ? 's' : ''} ✅`);
-      } catch(err) {
-        showToast('Import failed — check file format ❌');
-      }
+        showToast(`Imported ${added} item${added!==1?'s':''} ✅`);
+      } catch { showToast('Import failed ❌'); }
       e.target.value = '';
     };
     reader.readAsArrayBuffer(file);
@@ -609,7 +802,7 @@ if (importInput) {
 function clearLibrary() {
   if (!confirm('Clear entire library? This cannot be undone.')) return;
   library = [];
-  localStorage.setItem(SK.lib, JSON.stringify(library));
+  saveLib();
   render();
   ['moviesGrid','seriesGrid','animeGrid'].forEach(id => {
     const g = document.getElementById(id);
@@ -618,10 +811,7 @@ function clearLibrary() {
   showToast('Library cleared');
 }
 
-/* ── FEEDBACK ───────────────────────────────── */
-function openFeedback() {
-  showToast('📧 contact.manoj.official@gmail.com');
-}
+function openFeedback() { showToast('📧 contact.manoj.official@gmail.com'); }
 
 /* ── INIT ───────────────────────────────────── */
 ensureLibraryTools();
