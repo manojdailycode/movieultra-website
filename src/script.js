@@ -1,6 +1,6 @@
 'use strict';
 
-const VERSION = "1.6.0";
+const VERSION = "1.7.0";
 
 /* ── STORAGE KEYS ───────────────────────────── */
 const SK = {
@@ -137,7 +137,9 @@ function showView(viewName) {
   if (viewName === 'series')    renderFiltered('tv',     'seriesGrid');
   if (viewName === 'anime')     renderFiltered('anime',  'animeGrid');
   if (viewName === 'watchlist') renderWatchlist();
-  if (viewName === 'profile')   document.getElementById('appVersion').innerText = `v${VERSION}`;
+  if (viewName === 'profile')   renderProfile();
+  if (viewName === 'settings')  renderSettings();
+  if (viewName === 'feedback')  renderFeedback();
 
   document.getElementById('sidebar').classList.remove('active');
   document.getElementById('overlay').classList.remove('active');
@@ -1134,7 +1136,188 @@ function clearLibrary() {
   showToast('Library cleared');
 }
 
-function openFeedback() { showToast('📧 contact.manoj.official@gmail.com'); }
+function clearWatchlist() {
+  if (!confirm('Clear entire watchlist? This cannot be undone.')) return;
+  watchlist = [];
+  saveWl();
+  renderWatchlist();
+  showToast('Watchlist cleared');
+}
+
+/* ── RENDER PROFILE ─────────────────────────── */
+function renderProfile() {
+  const el = document.getElementById('profileContent');
+  if (!el) return;
+
+  const total     = library.length;
+  const completed = library.filter(i => (i.status || '') === 'Completed').length;
+  const watching  = library.filter(i => (i.status || '') === 'Watching').length;
+  const planned   = library.filter(i => (i.status || '') === 'Planned').length;
+  const rated     = library.filter(i => (i.starRating || 0) > 0).length;
+  const avgStar   = rated
+    ? (library.filter(i => i.starRating > 0)
+        .reduce((s, i) => s + i.starRating, 0) / rated).toFixed(1)
+    : '—';
+  const movies = library.filter(i => i.type === 'movie').length;
+  const series = library.filter(i => i.type === 'tv').length;
+  const anime  = library.filter(i => i.type === 'anime').length;
+  const wlSize = watchlist.length;
+
+  el.innerHTML = `
+    <div class="prof-hero">
+      <div class="prof-avatar">M</div>
+      <h2 class="prof-name">Manoj Kumar</h2>
+      <p class="prof-username">@mavillamanoj</p>
+      <p class="prof-bio">Building my cinematic universe 🎬</p>
+      <p class="prof-version">Movie Ultra v${VERSION}</p>
+    </div>
+
+    <div class="prof-stats-grid">
+      <div class="prof-stat accent-blue">
+        <div class="prof-stat-num">${total}</div>
+        <div class="prof-stat-lbl">📚 Library</div>
+      </div>
+      <div class="prof-stat accent-green">
+        <div class="prof-stat-num">${completed}</div>
+        <div class="prof-stat-lbl">✅ Completed</div>
+      </div>
+      <div class="prof-stat accent-orange">
+        <div class="prof-stat-num">${watching}</div>
+        <div class="prof-stat-lbl">👁 Watching</div>
+      </div>
+      <div class="prof-stat accent-gray">
+        <div class="prof-stat-num">${planned}</div>
+        <div class="prof-stat-lbl">📋 Planned</div>
+      </div>
+      <div class="prof-stat accent-gold">
+        <div class="prof-stat-num">${avgStar}</div>
+        <div class="prof-stat-lbl">⭐ Avg Rating</div>
+      </div>
+      <div class="prof-stat accent-purple">
+        <div class="prof-stat-num">${wlSize}</div>
+        <div class="prof-stat-lbl">⭐ Watchlist</div>
+      </div>
+    </div>
+
+    <div class="prof-type-grid">
+      <div class="prof-type-card">
+        <div class="prof-type-num">${movies}</div>
+        <div class="prof-type-lbl">🎬 Movies</div>
+      </div>
+      <div class="prof-type-card">
+        <div class="prof-type-num">${series}</div>
+        <div class="prof-type-lbl">📺 Series</div>
+      </div>
+      <div class="prof-type-card">
+        <div class="prof-type-num">${anime}</div>
+        <div class="prof-type-lbl">🌸 Anime</div>
+      </div>
+    </div>`;
+}
+
+/* ── RENDER SETTINGS ────────────────────────── */
+function renderSettings() {
+  const el = document.getElementById('settingsContent');
+  if (!el) return;
+
+  const isDark = document.body.classList.contains('dark-mode');
+
+  el.innerHTML = `
+    <div class="setting-row">
+      <div>
+        <div class="setting-lbl">🌓 Dark Mode</div>
+        <div class="setting-desc">${isDark ? 'Dark theme is ON' : 'Light theme is ON'}</div>
+      </div>
+      <button class="btn-setting" onclick="toggleTheme(); renderSettings()">Toggle</button>
+    </div>
+
+    <div class="setting-row">
+      <div>
+        <div class="setting-lbl">📤 Export Library</div>
+        <div class="setting-desc">${library.length} items — Excel format</div>
+      </div>
+      <button class="btn-setting" onclick="exportExcel()">Export</button>
+    </div>
+
+    <div class="setting-row">
+      <div>
+        <div class="setting-lbl">📥 Import Library</div>
+        <div class="setting-desc">Import from Excel file</div>
+      </div>
+      <button class="btn-setting" onclick="importExcel()">Import</button>
+    </div>
+
+    <div class="setting-row">
+      <div>
+        <div class="setting-lbl">🗑 Clear Library</div>
+        <div class="setting-desc">${library.length} items will be deleted</div>
+      </div>
+      <button class="btn-setting btn-danger" onclick="clearLibrary(); renderSettings()">Clear</button>
+    </div>
+
+    <div class="setting-row">
+      <div>
+        <div class="setting-lbl">🗑 Clear Watchlist</div>
+        <div class="setting-desc">${watchlist.length} saved items</div>
+      </div>
+      <button class="btn-setting btn-danger" onclick="clearWatchlist(); renderSettings()">Clear</button>
+    </div>
+
+    <div class="setting-row">
+      <div>
+        <div class="setting-lbl">ℹ️ App Version</div>
+        <div class="setting-desc">Movie Ultra v${VERSION}</div>
+      </div>
+      <span style="color:var(--text-sub);font-size:12px">v${VERSION}</span>
+    </div>`;
+}
+
+/* ── RENDER FEEDBACK ────────────────────────── */
+function renderFeedback() {
+  const el = document.getElementById('feedbackContent');
+  if (!el) return;
+
+  el.innerHTML = `
+    <div class="feedback-hero">
+      <h3>💬 Share Your Feedback</h3>
+      <p>Found a bug? Feature request? We'd love to hear from you!</p>
+    </div>
+
+    <div class="fb-field">
+      <label for="fbMsg">Your Message</label>
+      <textarea id="fbMsg" placeholder="Describe your feedback…" rows="5"></textarea>
+    </div>
+    <button class="btn-submit" id="fbSubmit">📤 Send Feedback</button>
+
+    <div class="feedback-contact">
+      <h4>📬 Reach Out Directly</h4>
+      <div class="contact-row">
+        <div class="contact-icon">✈️</div>
+        <div>
+          <div class="contact-lbl">TELEGRAM</div>
+          <div class="contact-val">
+            <a href="https://t.me/Mavillamanoj" target="_blank" rel="noopener">@Mavillamanoj</a>
+          </div>
+        </div>
+      </div>
+      <div class="contact-row">
+        <div class="contact-icon">📧</div>
+        <div>
+          <div class="contact-lbl">EMAIL</div>
+          <div class="contact-val">
+            <a href="mailto:contact.manoj.official@gmail.com">contact.manoj.official@gmail.com</a>
+          </div>
+        </div>
+      </div>
+    </div>`;
+
+  document.getElementById('fbSubmit')?.addEventListener('click', () => {
+    const msg = document.getElementById('fbMsg').value.trim();
+    if (!msg) { showToast('Please enter a message ❌'); return; }
+    showToast('✅ Thank you for your feedback!');
+    document.getElementById('fbMsg').value = '';
+  });
+}
 
 /* ── INIT ───────────────────────────────────── */
 ensureLibraryTools();

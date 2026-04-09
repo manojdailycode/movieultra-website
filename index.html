@@ -12,7 +12,7 @@
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="Movie Ultra">
-  <title>🎬 Movie Ultra v1.6.0 - Your Personal Movie Library</title>
+  <title>🎬 Movie Ultra v1.7.0 - Your Personal Movie Library</title>
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;600;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="src/styles.css">
 
@@ -27,7 +27,7 @@
       <img src="src/logo.svg" alt="Movie Ultra Logo" class="sb-logo-img"
            onerror="this.style.display='none'; document.getElementById('logoFallback').style.display='block';">
       <div id="logoFallback" class="sb-logo-fallback" style="display:none">MOVIE ULTRA</div>
-      <div class="sb-version">v1.6.0</div>
+      <div class="sb-version">v1.7.0</div>
     </div>
   </div>
   <div class="sb-content">
@@ -45,7 +45,7 @@
     <div class="sb-section-title">Account</div>
     <div class="sb-item" data-view="profile" onclick="showView('profile')"><span>👤</span> Profile</div>
     <div class="sb-item" data-view="settings" onclick="showView('settings')"><span>⚙️</span> Settings</div>
-    <div class="sb-item" onclick="openFeedback()"><span>💬</span> Feedback</div>
+    <div class="sb-item" data-view="feedback" onclick="showView('feedback')"><span>💬</span> Feedback</div>
     <div class="sb-item logout" onclick="showToast('Firebase login coming in v2.0 🔒')"><span>🚪</span> Logout</div>
   </div>
 </aside>
@@ -112,32 +112,22 @@
     <div id="watchlistGrid" class="poster-grid"></div>
   </section>
 
-  <!-- Settings -->
-  <section id="view-settings" class="view-section">
-    <h2 class="section-title">⚙️ Settings</h2>
-    <div class="settings-card">
-      <div class="settings-row">
-        <span>Dark Mode</span>
-        <button onclick="toggleTheme()" class="btn-setting">Toggle</button>
-      </div>
-      <div class="settings-row">
-        <span>Clear Library</span>
-        <button onclick="clearLibrary()" class="btn-setting btn-danger">Clear</button>
-      </div>
-      <div class="settings-row">
-        <span>App Version</span>
-        <span style="color:var(--text-sub)">v1.6.0</span>
-      </div>
-    </div>
+  <!-- Profile -->
+  <section id="view-profile" class="view-section" aria-label="Profile">
+    <div class="view-head"><h2>👤 Profile</h2></div>
+    <div id="profileContent"></div>
   </section>
 
-  <section id="view-profile" class="view-section">
-    <div style="text-align:center; padding:40px 0;">
-       <div style="width:80px; height:80px; background:var(--accent); border-radius:50%; margin:0 auto 15px; display:flex; align-items:center; justify-content:center; font-size:30px; color:white">U</div>
-       <h2 style="margin:0">User Pro</h2>
-       <p style="color:var(--text-sub)">member since 2024</p>
-       <p id="appVersion" style="color:var(--text-sub); font-size:12px;"></p>
-    </div>
+  <!-- Settings -->
+  <section id="view-settings" class="view-section" aria-label="Settings">
+    <div class="view-head"><h2>⚙️ Settings</h2></div>
+    <div id="settingsContent"></div>
+  </section>
+
+  <!-- Feedback — ADD THIS (new view) -->
+  <section id="view-feedback" class="view-section" aria-label="Feedback">
+    <div class="view-head"><h2>💬 Feedback</h2></div>
+    <div id="feedbackContent"></div>
   </section>
 </div>
 
