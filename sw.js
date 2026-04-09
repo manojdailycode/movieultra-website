@@ -1,4 +1,4 @@
-const CACHE_NAME = 'movieultra-v1-5-0';
+const CACHE_NAME = 'movieultra-v1-7-0';
 
 const PRECACHE_URLS = [
   '/',
