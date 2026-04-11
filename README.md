@@ -28,4 +28,4 @@ HTML · CSS · Vanilla JS · TMDB API · OMDb API · TVMaze API · Jikan API · 
 2. `npm start` → open `http://localhost:8000`
 
 ## Author
-Manoj Kumar · v1.7.0
+Manoj Kumar · v1.8.0
