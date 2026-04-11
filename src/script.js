@@ -7,7 +7,20 @@ const SK = {
   lib:       'mu_lib_v1',
   watchlist: 'mu_watchlist_v1',
   theme:     'mu_theme',
+  themeTone: 'mu_theme_tone',
 };
+
+const THEME_PRESETS = [
+  { id: 'dark', name: 'Dark', icon: '🌑', colors: ['#070b12', '#111827', '#ef4444'], mode: 'dark' },
+  { id: 'light', name: 'Light', icon: '☀️', colors: ['#f9fafb', '#e5e7eb', '#ef4444'], mode: 'light' },
+  { id: 'amoled', name: 'AMOLED', icon: '⚫', colors: ['#000000', '#050505', '#ef4444'], mode: 'dark' },
+  { id: 'midnight', name: 'Midnight', icon: '🌌', colors: ['#020617', '#0f172a', '#60a5fa'], mode: 'dark' },
+  { id: 'ocean', name: 'Ocean', icon: '🌊', colors: ['#031525', '#0b253b', '#38bdf8'], mode: 'dark' },
+  { id: 'sunset', name: 'Sunset', icon: '🌅', colors: ['#1a0f10', '#3f171b', '#fb923c'], mode: 'dark' },
+  { id: 'cherry', name: 'Cherry', icon: '🌸', colors: ['#1a0d1a', '#31132f', '#ec4899'], mode: 'dark' },
+  { id: 'forest', name: 'Forest', icon: '🌲', colors: ['#07140f', '#11231b', '#4ade80'], mode: 'dark' },
+  { id: 'ruby', name: 'Ruby', icon: '❤️', colors: ['#13070b', '#2f0f16', '#f43f5e'], mode: 'dark' },
+];
 
 /* ── MIGRATE old keys ───────────────────────── */
 (function migrate() {
@@ -105,10 +118,32 @@ function toggleSidebar() {
 
 /* ── THEME ──────────────────────────────────── */
 function toggleTheme() {
-  document.body.classList.toggle('dark-mode');
-  localStorage.setItem(SK.theme, document.body.classList.contains('dark-mode') ? 'dark' : 'light');
+  const next = document.body.classList.contains('dark-mode') ? 'light' : 'dark';
+  applyTheme(next);
+  renderSettings();
 }
-if (localStorage.getItem(SK.theme) === 'dark') document.body.classList.add('dark-mode');
+
+function updateSidebarLogo() {
+  const logo = document.querySelector('.sb-logo-img');
+  if (!logo) return;
+  const isDark = document.body.classList.contains('dark-mode');
+  logo.src = isDark ? 'src/logo-dark.svg' : 'src/logo.svg';
+}
+
+function applyTheme(themeId = 'dark') {
+  const uniqueThemes = [...new Map(THEME_PRESETS.map(t => [t.id, t])).values()];
+  const selected = uniqueThemes.find(t => t.id === themeId) || uniqueThemes[0];
+  document.body.classList.toggle('dark-mode', selected.mode !== 'light');
+  document.body.dataset.theme = selected.id;
+  document.body.style.setProperty('--bg', selected.colors[0]);
+  document.body.style.setProperty('--card-bg', selected.colors[1]);
+  document.body.style.setProperty('--accent', selected.colors[2]);
+  localStorage.setItem(SK.theme, selected.mode);
+  localStorage.setItem(SK.themeTone, selected.id);
+  updateSidebarLogo();
+}
+
+applyTheme(localStorage.getItem(SK.themeTone) || localStorage.getItem(SK.theme) || 'dark');
 
 /* ── TYPE CHIPS ─────────────────────────────── */
 function setType(type) {
@@ -1220,13 +1255,30 @@ function renderSettings() {
   const el = document.getElementById('settingsContent');
   if (!el) return;
 
-  const isDark = document.body.classList.contains('dark-mode');
+  const uniqueThemes = [...new Map(THEME_PRESETS.map(t => [t.id, t])).values()];
+  const currentTheme = document.body.dataset.theme || localStorage.getItem(SK.themeTone) || 'dark';
 
   el.innerHTML = `
+    <div class="setting-block">
+      <div class="setting-head">
+        <div class="setting-lbl">🎨 Themes</div>
+        <div class="setting-desc">Fixed duplicate themes, 3-dot preview, and added red theme</div>
+      </div>
+      <div class="theme-grid">
+        ${uniqueThemes.map(t => `
+          <button class="theme-card ${currentTheme === t.id ? 'active' : ''}" data-theme="${t.id}">
+            <div class="theme-dots">
+              ${t.colors.map(color => `<span class="theme-dot" style="background:${color}"></span>`).join('')}
+            </div>
+            <div class="theme-name">${t.icon} ${t.name}</div>
+          </button>`).join('')}
+      </div>
+    </div>
+
     <div class="setting-row">
       <div>
         <div class="setting-lbl">🌓 Dark Mode</div>
-        <div class="setting-desc">${isDark ? 'Dark theme is ON' : 'Light theme is ON'}</div>
+        <div class="setting-desc">${document.body.classList.contains('dark-mode') ? 'Dark theme is ON' : 'Light theme is ON'}</div>
       </div>
       <button class="btn-setting" onclick="toggleTheme(); renderSettings()">Toggle</button>
     </div>
@@ -1270,6 +1322,13 @@ function renderSettings() {
       </div>
       <span style="color:var(--text-sub);font-size:12px">v${VERSION}</span>
     </div>`;
+
+  el.querySelectorAll('.theme-card').forEach(card => {
+    card.addEventListener('click', () => {
+      applyTheme(card.dataset.theme);
+      renderSettings();
+    });
+  });
 }
 
 /* ── RENDER FEEDBACK ────────────────────────── */
