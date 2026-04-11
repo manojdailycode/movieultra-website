@@ -124,10 +124,11 @@ function toggleTheme() {
 }
 
 function updateSidebarLogo() {
-  const logo = document.querySelector('.sb-logo-img');
+  const logo = document.getElementById('sbLogoText');
   if (!logo) return;
   const isDark = document.body.classList.contains('dark-mode');
-  logo.src = isDark ? 'src/logo-dark.svg' : 'src/logo.svg';
+  logo.style.color = isDark ? '#f8fafc' : '#0f172a';
+  logo.style.textShadow = isDark ? '0 0 18px rgba(244,63,94,0.16)' : 'none';
 }
 
 function applyTheme(themeId = 'dark') {
