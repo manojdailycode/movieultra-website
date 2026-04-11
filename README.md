@@ -17,12 +17,15 @@ Personal movie, series & anime tracking app — no login, no cloud, just yours.
 - Dark mode
 
 ## Stack
-HTML · CSS · Vanilla JS · TMDB API · Jikan API · Vercel
+HTML · CSS · Vanilla JS · TMDB API · OMDb API · TVMaze API · Jikan API · Vercel
 
 ## Run Locally
-1. `cp src/config.example.js src/config.js`
-2. Add your TMDB key in `src/config.js`
-3. `npm start` → open `http://localhost:8000`
+1. Add these environment variables:
+   - `TMDB_KEY`
+   - `OMDB_KEY`
+   - `TVMAZE_KEY` (optional; TVMaze endpoints here work without key)
+   - `JIKAN_KEY` (not required; kept for parity if you want to manage it in one place)
+2. `npm start` → open `http://localhost:8000`
 
 ## Author
 Manoj Kumar · v1.7.0
