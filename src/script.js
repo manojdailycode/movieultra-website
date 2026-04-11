@@ -1408,8 +1408,34 @@ function renderProfile() {
 function renderSettings() {
   const el = document.getElementById('settingsContent');
   if (!el) return;
+  const uniqueThemes = [...new Map(THEME_PRESETS.map(t => [t.id, t])).values()];
+  const currentTheme = document.body.dataset.theme || localStorage.getItem(SK.themeTone) || 'dark';
 
   el.innerHTML = `
+    <div class="setting-block">
+      <div class="setting-head">
+        <div class="setting-lbl">🎨 Themes</div>
+        <div class="setting-desc">Choose your style across the app</div>
+      </div>
+      <div class="theme-grid">
+        ${uniqueThemes.map(t => `
+          <button class="theme-card ${currentTheme === t.id ? 'active' : ''}" data-theme="${t.id}">
+            <div class="theme-dots">
+              ${t.colors.map(color => `<span class="theme-dot" style="background:${color}"></span>`).join('')}
+            </div>
+            <div class="theme-name">${t.icon} ${t.name}</div>
+          </button>`).join('')}
+      </div>
+    </div>
+
+    <div class="setting-row">
+      <div>
+        <div class="setting-lbl">🌓 Dark Mode</div>
+        <div class="setting-desc">${document.body.classList.contains('dark-mode') ? 'Dark theme is ON' : 'Light theme is ON'}</div>
+      </div>
+      <button class="btn-setting" onclick="toggleTheme(); renderSettings()">Toggle</button>
+    </div>
+
     <div class="setting-row">
       <div>
         <div class="setting-lbl">📤 Export Library</div>
@@ -1431,11 +1457,34 @@ function renderSettings() {
 
     <div class="setting-row">
       <div>
+        <div class="setting-lbl">🗑 Clear Library</div>
+        <div class="setting-desc">${library.length} items will be removed</div>
+      </div>
+      <button class="btn-setting btn-danger" onclick="clearLibrary(); renderSettings()">Clear</button>
+    </div>
+
+    <div class="setting-row">
+      <div>
+        <div class="setting-lbl">🗑 Clear Watchlist</div>
+        <div class="setting-desc">${watchlist.length} saved items</div>
+      </div>
+      <button class="btn-setting btn-danger" onclick="clearWatchlist(); renderSettings()">Clear</button>
+    </div>
+
+    <div class="setting-row">
+      <div>
         <div class="setting-lbl">ℹ️ App Version</div>
         <div class="setting-desc">Movie Ultra v${VERSION}</div>
       </div>
       <span style="color:var(--text-sub);font-size:12px">v${VERSION}</span>
     </div>`;
+
+  el.querySelectorAll('.theme-card').forEach(card => {
+    card.addEventListener('click', () => {
+      applyTheme(card.dataset.theme);
+      renderSettings();
+    });
+  });
 }
 
 /* ── RENDER FEEDBACK ────────────────────────── */
