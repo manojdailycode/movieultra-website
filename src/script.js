@@ -120,6 +120,12 @@ function updateOfflineBanner() {
 function toggleSidebar() {
   document.getElementById('sidebar').classList.toggle('active');
   document.getElementById('overlay').classList.toggle('active');
+  updateSidebarMeta();
+}
+
+function closeSidebar() {
+  document.getElementById('sidebar').classList.remove('active');
+  document.getElementById('overlay').classList.remove('active');
 }
 
 /* ── THEME ──────────────────────────────────── */
@@ -134,7 +140,14 @@ function updateSidebarLogo() {
   if (!logo) return;
   const isDark = document.body.classList.contains('dark-mode');
   logo.style.color = isDark ? '#f8fafc' : '#0f172a';
-  logo.style.textShadow = isDark ? '0 0 18px rgba(244,63,94,0.16)' : 'none';
+  logo.style.textShadow = 'none';
+  const avatar = document.querySelector('.sb-avatar');
+  if (avatar) avatar.style.background = getComputedStyle(document.body).getPropertyValue('--accent') || '#ef4444';
+}
+
+function updateSidebarMeta() {
+  const c = document.getElementById('sbLibraryCount');
+  if (c) c.textContent = String(library.length);
 }
 
 function applyTheme(themeId = 'dark') {
@@ -185,6 +198,7 @@ function showView(viewName) {
 
   document.getElementById('sidebar').classList.remove('active');
   document.getElementById('overlay').classList.remove('active');
+  updateSidebarMeta();
 }
 
 /* ── QUERY ENGINE ───────────────────────────── */
@@ -939,6 +953,7 @@ function render() {
       ],
     })
   ).join('');
+  updateSidebarMeta();
 }
 
 /* ── REMOVE ─────────────────────────────────── */
@@ -1536,6 +1551,7 @@ function renderFeedback() {
 
 /* ── INIT ───────────────────────────────────── */
 ensureLibraryTools();
+updateSidebarMeta();
 updateOfflineBanner();
 window.addEventListener('online', updateOfflineBanner);
 window.addEventListener('offline', updateOfflineBanner);

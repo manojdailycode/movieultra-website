@@ -23,23 +23,28 @@
 
 <aside class="sidebar" id="sidebar">
   <div class="sb-header">
-    <div class="sb-logo-wrap">
-      <div id="sbLogoText" class="sb-logo-text" aria-label="Movie Ultra">MOVIE <span>ULTRA</span></div>
-      <div class="sb-version">v1.8.0</div>
+    <div class="sb-top-row">
+      <div id="sbLogoText" class="sb-logo-text" aria-label="Movie Ultra">MOVIE<span>ULTRA</span></div>
+      <button class="sb-close-btn" onclick="closeSidebar()" aria-label="Close sidebar">✕</button>
+    </div>
+    <div class="sb-profile">
+      <div class="sb-avatar">MV</div>
+      <div>
+        <div class="sb-name">Manoj V</div>
+        <div class="sb-meta"><span id="sbLibraryCount">0</span> titles tracked</div>
+      </div>
     </div>
   </div>
   <div class="sb-content">
-    <div class="sb-section-title">Main</div>
+    <div class="sb-section-title">Browse</div>
     <div class="sb-item active" data-view="home" onclick="showView('home')"><span>🏠</span> Home</div>
     <div class="sb-item" data-view="trending" onclick="showView('trending')"><span>🔥</span> Trending</div>
     <div class="sb-item" data-view="movies" onclick="showView('movies')"><span>🎬</span> Movies</div>
     <div class="sb-item" data-view="series" onclick="showView('series')"><span>📺</span> Series</div>
     <div class="sb-item" data-view="anime" onclick="showView('anime')"><span>🌸</span> Anime</div>
+    <div class="sb-section-title">My Content</div>
     <div class="sb-item" data-view="watchlist" onclick="showView('watchlist')"><span>⭐</span> Watchlist</div>
     <div class="sb-item" data-view="analytics" onclick="showView('analytics')"><span>📊</span> Analytics</div>
-    <div class="sb-section-title">Data</div>
-    <div class="sb-item" onclick="importExcel()"><span>📥</span> Import Excel</div>
-    <div class="sb-item" onclick="exportExcel()"><span>📤</span> Export Excel</div>
     <div class="sb-section-title">Account</div>
     <div class="sb-item" data-view="profile" onclick="showView('profile')"><span>👤</span> Profile</div>
     <div class="sb-item" data-view="settings" onclick="showView('settings')"><span>⚙️</span> Settings</div>
