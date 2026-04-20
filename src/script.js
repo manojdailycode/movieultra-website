@@ -1,13 +1,27 @@
 'use strict';
 
-const VERSION = "1.7.0";
+const VERSION = "1.8.0";
 
 /* ── STORAGE KEYS ───────────────────────────── */
 const SK = {
   lib:       'mu_lib_v1',
   watchlist: 'mu_watchlist_v1',
   theme:     'mu_theme',
+  themeTone: 'mu_theme_tone',
+  history:   'mu_history_v1',
 };
+
+const THEME_PRESETS = [
+  { id: 'dark', name: 'Dark', icon: '🌑', colors: ['#070b12', '#111827', '#ef4444'], mode: 'dark' },
+  { id: 'light', name: 'Light', icon: '☀️', colors: ['#f9fafb', '#e5e7eb', '#ef4444'], mode: 'light' },
+  { id: 'amoled', name: 'AMOLED', icon: '⚫', colors: ['#000000', '#050505', '#ef4444'], mode: 'dark' },
+  { id: 'midnight', name: 'Midnight', icon: '🌌', colors: ['#020617', '#0f172a', '#60a5fa'], mode: 'dark' },
+  { id: 'ocean', name: 'Ocean', icon: '🌊', colors: ['#031525', '#0b253b', '#38bdf8'], mode: 'dark' },
+  { id: 'sunset', name: 'Sunset', icon: '🌅', colors: ['#1a0f10', '#3f171b', '#fb923c'], mode: 'dark' },
+  { id: 'cherry', name: 'Cherry', icon: '🌸', colors: ['#1a0d1a', '#31132f', '#ec4899'], mode: 'dark' },
+  { id: 'forest', name: 'Forest', icon: '🌲', colors: ['#07140f', '#11231b', '#4ade80'], mode: 'dark' },
+  { id: 'ruby', name: 'Ruby', icon: '❤️', colors: ['#13070b', '#2f0f16', '#f43f5e'], mode: 'dark' },
+];
 
 /* ── MIGRATE old keys ───────────────────────── */
 (function migrate() {
@@ -40,12 +54,16 @@ const PLATFORM_LIST = ['Netflix', 'Prime', 'Disney+', 'Hulu', 'HBO'];
 /* ── STATE ──────────────────────────────────── */
 let library   = JSON.parse(localStorage.getItem(SK.lib))      || [];
 let watchlist = JSON.parse(localStorage.getItem(SK.watchlist)) || [];
+let historyItems = JSON.parse(localStorage.getItem(SK.history)) || [];
 let activeType          = 'movie';
 let librarySearch       = '';
 let librarySortBy       = 'recent';
 let libraryStatusFilter = 'All';
 let _modalIdx           = null;   // index of item currently open in modal
 let trendingItems       = [];
+let liveMovies          = [];
+let liveSeries          = [];
+let liveAnime           = [];
 
 /* Ensure all items have required fields */
 library = library.map(i => ({
@@ -65,16 +83,22 @@ watchlist = watchlist.map(i => ({
 /* ── SAVE HELPERS ───────────────────────────── */
 function saveLib()  { localStorage.setItem(SK.lib, JSON.stringify(library)); }
 function saveWl()   { localStorage.setItem(SK.watchlist, JSON.stringify(watchlist)); }
+function saveHistory() { localStorage.setItem(SK.history, JSON.stringify(historyItems)); }
 
 function getSourceArray(source) {
   if (source === 'watchlist') return watchlist;
   if (source === 'trending') return trendingItems;
+  if (source === 'history') return historyItems;
+  if (source === 'live-movies') return liveMovies;
+  if (source === 'live-series') return liveSeries;
+  if (source === 'live-anime') return liveAnime;
   return library;
 }
 
 function persistSource(source) {
   if (source === 'watchlist') return saveWl();
   if (source === 'library') return saveLib();
+  if (source === 'history') return saveHistory();
 }
 
 /* ── TOAST ──────────────────────────────────── */
@@ -101,14 +125,50 @@ function updateOfflineBanner() {
 function toggleSidebar() {
   document.getElementById('sidebar').classList.toggle('active');
   document.getElementById('overlay').classList.toggle('active');
+  updateSidebarMeta();
+}
+
+function closeSidebar() {
+  document.getElementById('sidebar').classList.remove('active');
+  document.getElementById('overlay').classList.remove('active');
 }
 
 /* ── THEME ──────────────────────────────────── */
 function toggleTheme() {
-  document.body.classList.toggle('dark-mode');
-  localStorage.setItem(SK.theme, document.body.classList.contains('dark-mode') ? 'dark' : 'light');
+  const next = document.body.classList.contains('dark-mode') ? 'light' : 'dark';
+  applyTheme(next);
+  renderSettings();
 }
-if (localStorage.getItem(SK.theme) === 'dark') document.body.classList.add('dark-mode');
+
+function updateSidebarLogo() {
+  const logo = document.getElementById('sbLogoText');
+  if (!logo) return;
+  const isDark = document.body.classList.contains('dark-mode');
+  logo.style.color = isDark ? '#f8fafc' : '#0f172a';
+  logo.style.textShadow = 'none';
+  const avatar = document.querySelector('.sb-avatar');
+  if (avatar) avatar.style.background = getComputedStyle(document.body).getPropertyValue('--accent') || '#ef4444';
+}
+
+function updateSidebarMeta() {
+  const c = document.getElementById('sbLibraryCount');
+  if (c) c.textContent = String(library.length);
+}
+
+function applyTheme(themeId = 'dark') {
+  const uniqueThemes = [...new Map(THEME_PRESETS.map(t => [t.id, t])).values()];
+  const selected = uniqueThemes.find(t => t.id === themeId) || uniqueThemes[0];
+  document.body.classList.toggle('dark-mode', selected.mode !== 'light');
+  document.body.dataset.theme = selected.id;
+  document.body.style.setProperty('--bg', selected.colors[0]);
+  document.body.style.setProperty('--card-bg', selected.colors[1]);
+  document.body.style.setProperty('--accent', selected.colors[2]);
+  localStorage.setItem(SK.theme, selected.mode);
+  localStorage.setItem(SK.themeTone, selected.id);
+  updateSidebarLogo();
+}
+
+applyTheme(localStorage.getItem(SK.themeTone) || localStorage.getItem(SK.theme) || 'dark');
 
 /* ── TYPE CHIPS ─────────────────────────────── */
 function setType(type) {
@@ -133,16 +193,18 @@ function showView(viewName) {
 
   if (viewName === 'trending')  loadTrending();
   if (viewName === 'analytics') loadStats();
-  if (viewName === 'movies')    renderFiltered('movie',  'moviesGrid');
-  if (viewName === 'series')    renderFiltered('tv',     'seriesGrid');
-  if (viewName === 'anime')     renderFiltered('anime',  'animeGrid');
+  if (viewName === 'movies')    loadLiveMovies();
+  if (viewName === 'series')    loadLiveSeries();
+  if (viewName === 'anime')     loadLiveAnime();
   if (viewName === 'watchlist') renderWatchlist();
+  if (viewName === 'history')   renderHistory();
   if (viewName === 'profile')   renderProfile();
   if (viewName === 'settings')  renderSettings();
   if (viewName === 'feedback')  renderFeedback();
 
   document.getElementById('sidebar').classList.remove('active');
   document.getElementById('overlay').classList.remove('active');
+  updateSidebarMeta();
 }
 
 /* ── QUERY ENGINE ───────────────────────────── */
@@ -309,6 +371,7 @@ function openModal(idx, source) {
   const arr = getSourceArray(source);
   const item = arr[idx];
   if (!item) return;
+  pushToHistory(item);
   _modalIdx = { idx, source };
 
   const modal = document.getElementById('detailModal');
@@ -340,6 +403,17 @@ function openModal(idx, source) {
   if ((item.type === 'movie' || item.type === 'tv') && (!item.overview || !item.backdrop)) {
     fetchItemDetails(item, idx, source);
   }
+}
+
+function pushToHistory(item) {
+  const key = `${item.title || ''}::${item.type || ''}`;
+  historyItems = historyItems.filter(h => `${h.title || ''}::${h.type || ''}` !== key);
+  historyItems.unshift({
+    ...item,
+    viewedAt: new Date().toISOString(),
+  });
+  historyItems = historyItems.slice(0, 100);
+  saveHistory();
 }
 
 function buildModalPills(item) {
@@ -610,7 +684,7 @@ function modalAddToLibrary() {
 async function fetchMedia(query, type) {
   try {
     if (type === 'anime') {
-      const res  = await fetch(`https://api.jikan.moe/v4/anime?q=${encodeURIComponent(query)}&limit=1`);
+      const res  = await fetch(`/api/jikan?path=anime&q=${encodeURIComponent(query)}&limit=1`);
       const data = await res.json();
       if (data.data?.length > 0) {
         const a = data.data[0];
@@ -643,6 +717,31 @@ async function fetchMedia(query, type) {
           starRating: 0,
           platform:   '',
         };
+      }
+      if (type === 'tv') {
+        const tvRes = await fetch(`/api/tvmaze?path=search/shows&q=${encodeURIComponent(query)}`);
+        const tvData = await tvRes.json();
+        if (Array.isArray(tvData) && tvData.length > 0) {
+          const s = tvData[0].show || {};
+          let omdbRating = 'N/A';
+          if (s.externals?.imdb) {
+            const or = await fetch(`/api/omdb?i=${encodeURIComponent(s.externals.imdb)}`);
+            const od = await or.json();
+            if (od?.imdbRating && od.imdbRating !== 'N/A') omdbRating = od.imdbRating;
+          }
+          return {
+            title:      s.name || query,
+            year:       (s.premiered || 'N/A').split('-')[0],
+            rating:     omdbRating !== 'N/A' ? omdbRating : (s.rating?.average != null ? String(s.rating.average) : 'N/A'),
+            poster:     s.image?.original || s.image?.medium || '',
+            backdrop:   s.image?.original || s.image?.medium || '',
+            overview:   (s.summary || '').replace(/<[^>]*>/g, ''),
+            type,
+            status:     'Planned',
+            starRating: 0,
+            platform:   '',
+          };
+        }
       }
     }
   } catch(e) { console.error(e); }
@@ -736,6 +835,108 @@ async function loadTrending() {
   }
 }
 
+function renderLiveGrid(gridId, source, items) {
+  const grid = document.getElementById(gridId);
+  if (!grid) return;
+  if (!items.length) {
+    grid.innerHTML = "<p class='placeholder-msg'>No results.</p>";
+    return;
+  }
+  grid.innerHTML = items.map((item, idx) => {
+    const title = item.title || '';
+    const safe  = title.replace(/\\/g, '\\\\').replace(/'/g, "\\'");
+    return `
+      <div class="movie-card" onclick="openModal(${idx},'${source}')" style="cursor:pointer">
+        <div class="poster-container">
+          <img src="${item.poster || ''}" loading="lazy" onerror="this.src=''">
+          <div class="badge">★ ${item.rating || 'N/A'}</div>
+        </div>
+        <div class="card-details" onclick="event.stopPropagation()">
+          <h3 title="${title.replace(/"/g,'&quot;')}">${title}</h3>
+          <p class="card-meta">${(item.type || '').toUpperCase()}</p>
+          <div class="card-actions">
+            <button class="btn-add" onclick="event.stopPropagation(); quickAdd('${safe}','${item.type}')">+ Library</button>
+          </div>
+        </div>
+      </div>`;
+  }).join('');
+}
+
+async function loadLiveMovies() {
+  const grid = document.getElementById('moviesGrid');
+  if (!grid) return;
+  grid.innerHTML = "<p class='placeholder-msg'>Loading live movies…</p>";
+  try {
+    const res = await fetch('/api/tmdb?path=movie/popular');
+    const data = await res.json();
+    liveMovies = (data.results || []).map(item => ({
+      title: item.title || '',
+      year: (item.release_date || 'N/A').split('-')[0],
+      rating: item.vote_average != null ? item.vote_average.toFixed(1) : 'N/A',
+      poster: item.poster_path ? `https://image.tmdb.org/t/p/w500${item.poster_path}` : '',
+      backdrop: item.backdrop_path ? `https://image.tmdb.org/t/p/w780${item.backdrop_path}` : '',
+      overview: item.overview || '',
+      type: 'movie',
+      status: 'Planned',
+      starRating: 0,
+      platform: '',
+    }));
+    renderLiveGrid('moviesGrid', 'live-movies', liveMovies);
+  } catch (e) {
+    grid.innerHTML = "<p class='placeholder-msg'>Failed to load live movies.</p>";
+  }
+}
+
+async function loadLiveSeries() {
+  const grid = document.getElementById('seriesGrid');
+  if (!grid) return;
+  grid.innerHTML = "<p class='placeholder-msg'>Loading live series…</p>";
+  try {
+    const res = await fetch('/api/tvmaze?path=shows&page=1');
+    const data = await res.json();
+    liveSeries = (Array.isArray(data) ? data : []).slice(0, 30).map(item => ({
+      title: item.name || '',
+      year: (item.premiered || 'N/A').split('-')[0],
+      rating: item.rating?.average != null ? String(item.rating.average) : 'N/A',
+      poster: item.image?.original || item.image?.medium || '',
+      backdrop: item.image?.original || item.image?.medium || '',
+      overview: (item.summary || '').replace(/<[^>]*>/g, ''),
+      type: 'tv',
+      status: 'Planned',
+      starRating: 0,
+      platform: '',
+    }));
+    renderLiveGrid('seriesGrid', 'live-series', liveSeries);
+  } catch (e) {
+    grid.innerHTML = "<p class='placeholder-msg'>Failed to load live series.</p>";
+  }
+}
+
+async function loadLiveAnime() {
+  const grid = document.getElementById('animeGrid');
+  if (!grid) return;
+  grid.innerHTML = "<p class='placeholder-msg'>Loading live anime…</p>";
+  try {
+    const res = await fetch('/api/jikan?path=top/anime&limit=30');
+    const data = await res.json();
+    liveAnime = (data.data || []).map(item => ({
+      title: item.title || '',
+      year: item.year || (item.aired?.from || 'N/A').slice(0, 4),
+      rating: item.score != null ? item.score.toFixed(2) : 'N/A',
+      poster: item.images?.jpg?.large_image_url || item.images?.jpg?.image_url || '',
+      backdrop: item.trailer?.images?.maximum_image_url || item.images?.jpg?.large_image_url || '',
+      overview: item.synopsis || '',
+      type: 'anime',
+      status: 'Planned',
+      starRating: 0,
+      platform: '',
+    }));
+    renderLiveGrid('animeGrid', 'live-anime', liveAnime);
+  } catch (e) {
+    grid.innerHTML = "<p class='placeholder-msg'>Failed to load live anime.</p>";
+  }
+}
+
 async function quickAdd(title, type) {
   const result = await fetchMedia(title, type);
   if (!result) { showToast('Could not add — try again'); return; }
@@ -770,6 +971,7 @@ function render() {
       ],
     })
   ).join('');
+  updateSidebarMeta();
 }
 
 /* ── REMOVE ─────────────────────────────────── */
@@ -827,6 +1029,41 @@ function renderWatchlist() {
       ],
     })
   ).join('');
+}
+
+function renderHistory() {
+  const grid = document.getElementById('historyGrid');
+  if (!grid) return;
+  if (!historyItems.length) {
+    grid.innerHTML = "<p class='placeholder-msg'>History is empty.</p>";
+    return;
+  }
+  grid.innerHTML = historyItems.map((item, idx) =>
+    buildCard({
+      item, idx, source: 'history',
+      actions: [
+        { label: '⭐ Watchlist', cls: 'btn-add', fn: `modalAddHistoryToWatchlist(${idx})` },
+      ],
+    })
+  ).join('');
+}
+
+function modalAddHistoryToWatchlist(idx) {
+  const item = historyItems[idx];
+  if (!item) return;
+  if (watchlist.some(w => w.title === item.title && w.type === item.type)) {
+    showToast('Already in watchlist'); return;
+  }
+  watchlist.unshift({ ...item });
+  saveWl();
+  showToast('Saved to watchlist ⭐');
+}
+
+function clearHistory() {
+  historyItems = [];
+  saveHistory();
+  renderHistory();
+  showToast('History cleared');
 }
 
 /* ── FILTERED VIEWS ─────────────────────────── */
@@ -1080,6 +1317,26 @@ function exportExcel() {
   showToast('Exported ✅');
 }
 
+function exportCSV() {
+  if (!library.length) { showToast('Library is empty'); return; }
+  const headers = ['Title', 'Type', 'Year', 'Rating', 'StarRating', 'Status', 'Platform', 'Poster'];
+  const rows = library.map(i => [
+    i.title || '', i.type || '', i.year || '', i.rating || '',
+    i.starRating || 0, i.status || 'Planned', i.platform || '', i.poster || '',
+  ]);
+  const csv = [headers, ...rows]
+    .map(r => r.map(v => `"${String(v).replace(/"/g, '""')}"`).join(','))
+    .join('\n');
+  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'MovieUltra_Library.csv';
+  a.click();
+  URL.revokeObjectURL(url);
+  showToast('CSV Exported ✅');
+}
+
 function importExcel() { document.getElementById('importFile')?.click(); }
 
 const importInput = document.getElementById('importFile');
@@ -1219,14 +1476,30 @@ function renderProfile() {
 function renderSettings() {
   const el = document.getElementById('settingsContent');
   if (!el) return;
-
-  const isDark = document.body.classList.contains('dark-mode');
+  const uniqueThemes = [...new Map(THEME_PRESETS.map(t => [t.id, t])).values()];
+  const currentTheme = document.body.dataset.theme || localStorage.getItem(SK.themeTone) || 'dark';
 
   el.innerHTML = `
+    <div class="setting-block">
+      <div class="setting-head">
+        <div class="setting-lbl">🎨 Themes</div>
+        <div class="setting-desc">Choose your style across the app</div>
+      </div>
+      <div class="theme-grid">
+        ${uniqueThemes.map(t => `
+          <button class="theme-card ${currentTheme === t.id ? 'active' : ''}" data-theme="${t.id}">
+            <div class="theme-dots">
+              ${t.colors.map(color => `<span class="theme-dot" style="background:${color}"></span>`).join('')}
+            </div>
+            <div class="theme-name">${t.icon} ${t.name}</div>
+          </button>`).join('')}
+      </div>
+    </div>
+
     <div class="setting-row">
       <div>
         <div class="setting-lbl">🌓 Dark Mode</div>
-        <div class="setting-desc">${isDark ? 'Dark theme is ON' : 'Light theme is ON'}</div>
+        <div class="setting-desc">${document.body.classList.contains('dark-mode') ? 'Dark theme is ON' : 'Light theme is ON'}</div>
       </div>
       <button class="btn-setting" onclick="toggleTheme(); renderSettings()">Toggle</button>
     </div>
@@ -1234,15 +1507,18 @@ function renderSettings() {
     <div class="setting-row">
       <div>
         <div class="setting-lbl">📤 Export Library</div>
-        <div class="setting-desc">${library.length} items — Excel format</div>
+        <div class="setting-desc">${library.length} items</div>
       </div>
-      <button class="btn-setting" onclick="exportExcel()">Export</button>
+      <div style="display:flex; gap:8px;">
+        <button class="btn-setting" onclick="exportCSV()">CSV</button>
+        <button class="btn-setting" onclick="exportExcel()">Excel</button>
+      </div>
     </div>
 
     <div class="setting-row">
       <div>
         <div class="setting-lbl">📥 Import Library</div>
-        <div class="setting-desc">Import from Excel file</div>
+        <div class="setting-desc">CSV or Excel</div>
       </div>
       <button class="btn-setting" onclick="importExcel()">Import</button>
     </div>
@@ -1250,7 +1526,7 @@ function renderSettings() {
     <div class="setting-row">
       <div>
         <div class="setting-lbl">🗑 Clear Library</div>
-        <div class="setting-desc">${library.length} items will be deleted</div>
+        <div class="setting-desc">${library.length} items will be removed</div>
       </div>
       <button class="btn-setting btn-danger" onclick="clearLibrary(); renderSettings()">Clear</button>
     </div>
@@ -1270,6 +1546,13 @@ function renderSettings() {
       </div>
       <span style="color:var(--text-sub);font-size:12px">v${VERSION}</span>
     </div>`;
+
+  el.querySelectorAll('.theme-card').forEach(card => {
+    card.addEventListener('click', () => {
+      applyTheme(card.dataset.theme);
+      renderSettings();
+    });
+  });
 }
 
 /* ── RENDER FEEDBACK ────────────────────────── */
@@ -1321,6 +1604,7 @@ function renderFeedback() {
 
 /* ── INIT ───────────────────────────────────── */
 ensureLibraryTools();
+updateSidebarMeta();
 updateOfflineBanner();
 window.addEventListener('online', updateOfflineBanner);
 window.addEventListener('offline', updateOfflineBanner);
