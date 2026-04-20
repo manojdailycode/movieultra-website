@@ -12,7 +12,7 @@
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="Movie Ultra">
-  <title>🎬 Movie Ultra v1.7.0 - Your Personal Movie Library</title>
+  <title>🎬 Movie Ultra v1.8.0 - Your Personal Movie Library</title>
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;600;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="src/styles.css">
 
@@ -23,25 +23,29 @@
 
 <aside class="sidebar" id="sidebar">
   <div class="sb-header">
-    <div class="sb-logo-wrap">
-      <img src="src/logo.svg" alt="Movie Ultra Logo" class="sb-logo-img"
-           onerror="this.style.display='none'; document.getElementById('logoFallback').style.display='block';">
-      <div id="logoFallback" class="sb-logo-fallback" style="display:none">MOVIE ULTRA</div>
-      <div class="sb-version">v1.7.0</div>
+    <div class="sb-top-row">
+      <div id="sbLogoText" class="sb-logo-text" aria-label="Movie Ultra">MOVIE<span>ULTRA</span></div>
+      <button class="sb-close-btn" onclick="closeSidebar()" aria-label="Close sidebar">✕</button>
+    </div>
+    <div class="sb-profile">
+      <div class="sb-avatar">MV</div>
+      <div>
+        <div class="sb-name">Manoj V</div>
+        <div class="sb-meta"><span id="sbLibraryCount">0</span> titles tracked</div>
+      </div>
     </div>
   </div>
   <div class="sb-content">
-    <div class="sb-section-title">Main</div>
+    <div class="sb-section-title">Browse</div>
     <div class="sb-item active" data-view="home" onclick="showView('home')"><span>🏠</span> Home</div>
     <div class="sb-item" data-view="trending" onclick="showView('trending')"><span>🔥</span> Trending</div>
     <div class="sb-item" data-view="movies" onclick="showView('movies')"><span>🎬</span> Movies</div>
     <div class="sb-item" data-view="series" onclick="showView('series')"><span>📺</span> Series</div>
     <div class="sb-item" data-view="anime" onclick="showView('anime')"><span>🌸</span> Anime</div>
+    <div class="sb-section-title">My Content</div>
     <div class="sb-item" data-view="watchlist" onclick="showView('watchlist')"><span>⭐</span> Watchlist</div>
+    <div class="sb-item" data-view="history" onclick="showView('history')"><span>🕒</span> History</div>
     <div class="sb-item" data-view="analytics" onclick="showView('analytics')"><span>📊</span> Analytics</div>
-    <div class="sb-section-title">Data</div>
-    <div class="sb-item" onclick="importExcel()"><span>📥</span> Import Excel</div>
-    <div class="sb-item" onclick="exportExcel()"><span>📤</span> Export Excel</div>
     <div class="sb-section-title">Account</div>
     <div class="sb-item" data-view="profile" onclick="showView('profile')"><span>👤</span> Profile</div>
     <div class="sb-item" data-view="settings" onclick="showView('settings')"><span>⚙️</span> Settings</div>
@@ -112,6 +116,15 @@
     <div id="watchlistGrid" class="poster-grid"></div>
   </section>
 
+  <!-- History -->
+  <section id="view-history" class="view-section">
+    <div class="view-head" style="display:flex;justify-content:space-between;align-items:center;">
+      <h2>🕒 Watch History</h2>
+      <button class="btn-setting btn-danger" onclick="clearHistory()">Clear All</button>
+    </div>
+    <div id="historyGrid" class="poster-grid"></div>
+  </section>
+
   <!-- Profile -->
   <section id="view-profile" class="view-section" aria-label="Profile">
     <div class="view-head"><h2>👤 Profile</h2></div>
@@ -139,7 +152,7 @@
   <div class="b-item" data-view="profile" onclick="showView('profile')"><span>👤</span>Me</div>
 </div>
 
-<input type="file" id="importFile" accept=".xlsx,.xls" style="display:none">
+<input type="file" id="importFile" accept=".xlsx,.xls,.csv" style="display:none">
 
 <!-- ── DETAIL MODAL ────────────────────── -->
 <div id="detailModal" class="modal-overlay hidden" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
