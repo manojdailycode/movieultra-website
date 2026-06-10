@@ -1,4 +1,5 @@
 <!DOCTYPE html>
+<<<<<<< HEAD
 <html lang="en" data-theme="dark">
 <head>
   <meta charset="UTF-8">
@@ -321,16 +322,156 @@
   </section>
 
   <!-- SETTINGS -->
+=======
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Movie Ultra - A modern web application for tracking and managing your personal movie, series, and anime library.">
+  <meta name="keywords" content="movie tracker, tv series, anime, library, TMDB, personal collection">
+  <meta name="author" content="Manoj Kumar">
+  <meta name="theme-color" content="#3b82f6">
+  <link rel="manifest" href="/manifest.json">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Movie Ultra">
+  <title>🎬 Movie Ultra v1.8.0 - Your Personal Movie Library</title>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;600;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="src/styles.css">
+
+</head>
+<body>
+
+<div class="sidebar-overlay" id="overlay" onclick="toggleSidebar()"></div>
+
+<aside class="sidebar" id="sidebar">
+  <div class="sb-header">
+    <div class="sb-top-row">
+      <div id="sbLogoText" class="sb-logo-text" aria-label="Movie Ultra">MOVIE<span>ULTRA</span></div>
+      <button class="sb-close-btn" onclick="closeSidebar()" aria-label="Close sidebar">✕</button>
+    </div>
+    <div class="sb-profile">
+      <div class="sb-avatar">MV</div>
+      <div>
+        <div class="sb-name">Manoj V</div>
+        <div class="sb-meta"><span id="sbLibraryCount">0</span> titles tracked</div>
+      </div>
+    </div>
+  </div>
+  <div class="sb-content">
+    <div class="sb-section-title">Browse</div>
+    <div class="sb-item active" data-view="home" onclick="showView('home')"><span>🏠</span> Home</div>
+    <div class="sb-item" data-view="trending" onclick="showView('trending')"><span>🔥</span> Trending</div>
+    <div class="sb-item" data-view="movies" onclick="showView('movies')"><span>🎬</span> Movies</div>
+    <div class="sb-item" data-view="series" onclick="showView('series')"><span>📺</span> Series</div>
+    <div class="sb-item" data-view="anime" onclick="showView('anime')"><span>🌸</span> Anime</div>
+    <div class="sb-section-title">My Content</div>
+    <div class="sb-item" data-view="watchlist" onclick="showView('watchlist')"><span>⭐</span> Watchlist</div>
+    <div class="sb-item" data-view="history" onclick="showView('history')"><span>🕒</span> History</div>
+    <div class="sb-item" data-view="analytics" onclick="showView('analytics')"><span>📊</span> Analytics</div>
+    <div class="sb-section-title">Account</div>
+    <div class="sb-item" data-view="profile" onclick="showView('profile')"><span>👤</span> Profile</div>
+    <div class="sb-item" data-view="settings" onclick="showView('settings')"><span>⚙️</span> Settings</div>
+    <div class="sb-item" data-view="feedback" onclick="showView('feedback')"><span>💬</span> Feedback</div>
+    <div class="sb-item logout" onclick="showToast('Firebase login coming in v2.0 🔒')"><span>🚪</span> Logout</div>
+  </div>
+</aside>
+
+<div id="offlineBanner" class="offline-banner" role="status" aria-live="polite">📡 You are offline — library still works</div>
+
+<nav>
+  <button class="menu-btn" onclick="toggleSidebar()" style="cursor:pointer; font-size:20px; background:none; border:none; color:var(--text-main);" aria-label="Toggle sidebar menu">☰</button>
+  <div id="pageTitle" style="font-weight:800; font-size:18px">HOME</div>
+  <button onclick="toggleTheme()" style="cursor:pointer; font-size:20px; background:none; border:none; color:var(--text-main);" aria-label="Toggle dark mode">🌓</button>
+</nav>
+
+<div id="searchContainer">
+  <div class="search-wrapper">
+    <div class="search-box">
+      <input type="text" id="smartInput" placeholder="Add to your library...">
+      <button class="search-btn" id="searchTrigger">Add</button>
+    </div>
+  </div>
+  <div class="filter-scroll">
+    <div class="chip active" id="chip-movie" onclick="setType('movie')">Movies</div>
+    <div class="chip" id="chip-tv" onclick="setType('tv')">Series</div>
+    <div class="chip" id="chip-anime" onclick="setType('anime')">Anime</div>
+  </div>
+</div>
+
+<div class="container">
+  <section id="view-home" class="view-section active">
+    <h2 class="section-title">✨ My Library</h2>
+    <div id="libraryGrid" class="poster-grid"></div>
+  </section>
+
+  <section id="view-trending" class="view-section">
+    <h2 class="section-title">🔥 Worldwide Trending</h2>
+    <div id="trendingGrid" class="poster-grid"></div>
+  </section>
+
+  <section id="view-analytics" class="view-section">
+    <h2 class="section-title">📊 Insights</h2>
+    <div id="statsContent"></div>
+  </section>
+
+  <!-- Movies filtered view -->
+  <section id="view-movies" class="view-section">
+    <h2 class="section-title">🎬 Movies</h2>
+    <div id="moviesGrid" class="poster-grid"></div>
+  </section>
+
+  <!-- Series filtered view -->
+  <section id="view-series" class="view-section">
+    <h2 class="section-title">📺 Series</h2>
+    <div id="seriesGrid" class="poster-grid"></div>
+  </section>
+
+  <!-- Anime filtered view -->
+  <section id="view-anime" class="view-section">
+    <h2 class="section-title">🌸 Anime</h2>
+    <div id="animeGrid" class="poster-grid"></div>
+  </section>
+
+  <!-- Watchlist -->
+  <section id="view-watchlist" class="view-section">
+    <h2 class="section-title">⭐ Watchlist</h2>
+    <div id="watchlistGrid" class="poster-grid"></div>
+  </section>
+
+  <!-- History -->
+  <section id="view-history" class="view-section">
+    <div class="view-head" style="display:flex;justify-content:space-between;align-items:center;">
+      <h2>🕒 Watch History</h2>
+      <button class="btn-setting btn-danger" onclick="clearHistory()">Clear All</button>
+    </div>
+    <div id="historyGrid" class="poster-grid"></div>
+  </section>
+
+  <!-- Profile -->
+  <section id="view-profile" class="view-section" aria-label="Profile">
+    <div class="view-head"><h2>👤 Profile</h2></div>
+    <div id="profileContent"></div>
+  </section>
+
+  <!-- Settings -->
+>>>>>>> origin/main
   <section id="view-settings" class="view-section" aria-label="Settings">
     <div class="view-head"><h2>⚙️ Settings</h2></div>
     <div id="settingsContent"></div>
   </section>
 
+<<<<<<< HEAD
   <!-- FEEDBACK -->
+=======
+  <!-- Feedback — ADD THIS (new view) -->
+>>>>>>> origin/main
   <section id="view-feedback" class="view-section" aria-label="Feedback">
     <div class="view-head"><h2>💬 Feedback</h2></div>
     <div id="feedbackContent"></div>
   </section>
+<<<<<<< HEAD
 
 </main>
 
@@ -358,11 +499,82 @@
           <button class="status-pill" data-s="Planned">📋 Planned</button>
         </div>
       </div>
+=======
+</div>
+
+<div class="bottom-nav">
+  <div class="b-item active" data-view="home" onclick="showView('home')"><span>🏠</span>Home</div>
+  <div class="b-item" data-view="trending" onclick="showView('trending')"><span>🔥</span>Trend</div>
+  <div class="b-item" data-view="watchlist" onclick="showView('watchlist')"><span>⭐</span>Saved</div>
+  <div class="b-item" data-view="analytics" onclick="showView('analytics')"><span>📊</span>Stats</div>
+  <div class="b-item" data-view="profile" onclick="showView('profile')"><span>👤</span>Me</div>
+</div>
+
+<input type="file" id="importFile" accept=".xlsx,.xls,.csv" style="display:none">
+
+<!-- ── DETAIL MODAL ────────────────────── -->
+<div id="detailModal" class="modal-overlay hidden" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+  <div class="modal-card">
+    <button class="modal-close-btn" id="modalClose" aria-label="Close">✕</button>
+
+    <!-- Backdrop hero -->
+    <div class="modal-hero">
+      <img id="modalBackdrop" src="" alt="" class="modal-backdrop-img" loading="lazy">
+      <div class="modal-hero-overlay" aria-hidden="true"></div>
+    </div>
+
+    <!-- Body -->
+    <div class="modal-body">
+      <!-- Pills: type + year + runtime -->
+      <div class="modal-pills" id="modalPills"></div>
+
+      <!-- Title -->
+      <h2 class="modal-title" id="modalTitle"></h2>
+
+      <!-- Overview -->
+      <p class="modal-overview" id="modalOverview"></p>
+
+      <!-- Genres -->
+      <div class="modal-genres" id="modalGenres"></div>
+
+      <!-- Personal Star Rating -->
+      <div class="modal-section">
+        <p class="modal-section-label">Your Rating</p>
+        <div class="star-rating" id="modalStars" role="group" aria-label="Rate this title">
+          <button class="star" data-v="1" aria-label="1 star">★</button>
+          <button class="star" data-v="2" aria-label="2 stars">★</button>
+          <button class="star" data-v="3" aria-label="3 stars">★</button>
+          <button class="star" data-v="4" aria-label="4 stars">★</button>
+          <button class="star" data-v="5" aria-label="5 stars">★</button>
+        </div>
+        <p class="star-hint" id="starHint">Tap to rate</p>
+      </div>
+
+      <!-- Status inside modal -->
+      <div class="modal-section" id="modalStatusSection">
+        <p class="modal-section-label">Status</p>
+        <div class="modal-status-pills" id="modalStatusPills">
+          <button class="modal-status-pill" data-s="Planned">📋 Planned</button>
+          <button class="modal-status-pill" data-s="Watching">👁 Watching</button>
+          <button class="modal-status-pill" data-s="Completed">✅ Completed</button>
+          <button class="modal-status-pill" data-s="Dropped">❌ Dropped</button>
+        </div>
+      </div>
+
+      <!-- Platform inside modal -->
+      <div class="modal-section" id="modalPlatformSection">
+        <p class="modal-section-label">Where to Watch</p>
+        <div class="modal-platform-pills" id="modalPlatformPills"></div>
+      </div>
+
+      <!-- Footer actions -->
+>>>>>>> origin/main
       <div class="modal-foot" id="modalFoot"></div>
     </div>
   </div>
 </div>
 
+<<<<<<< HEAD
 <!-- TRAILER MODAL ────────────────────────────────── -->
 <div id="trailerModal" class="modal-overlay hidden" role="dialog" aria-modal="true">
   <div class="trailer-card">
@@ -428,5 +640,24 @@
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script type="module" src="src/js/app.js"></script>
+=======
+<!-- ── TRAILER MODAL ────────────────────── -->
+<div id="trailerModal" class="trailer-modal-overlay hidden" role="dialog" aria-modal="true" aria-label="Trailer video">
+  <div class="trailer-modal-card" id="trailerCard">
+    <button class="trailer-close-btn" id="trailerClose" aria-label="Close trailer">✕</button>
+    <div id="trailerFrameWrap"></div>
+  </div>
+</div>
+
+<script src="https://cdn.sheetjs.com/xlsx-0.20.0/package/dist/xlsx.full.min.js"></script>
+<script src="src/script.js"></script>
+<script>
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('/sw.js')
+      .then(() => console.log('SW registered'))
+      .catch((error) => console.error(error));
+  }
+</script>
+>>>>>>> origin/main
 </body>
 </html>

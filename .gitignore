@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # Dependency directories
 node_modules/
 
@@ -21,3 +22,17 @@ Thumbs.db
 .idea/
 .vscode/
 *.log
+=======
+# Node modules
+node_modules/
+
+# Private Configuration & API Keys
+src/config.js
+
+# OS generated files
+.DS_Store
+Thumbs.db
+
+# Editor settings
+.vscode/
+>>>>>>> origin/main

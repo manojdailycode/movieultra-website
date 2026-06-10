@@ -1,5 +1,6 @@
 {
   "name": "movieultra-webapp",
+<<<<<<< HEAD
   "version": "2.0.0",
   "description": "Your premium movie, series & anime tracker",
   "main": "src/js/app.js",
@@ -24,5 +25,21 @@
   },
   "devDependencies": {
     "eslint": "^8.57.0"
+=======
+  "version": "1.8.0",
+  "description": "A professional movie tracking web app for managing personal library of movies, series, and anime.",
+  "main": "index.html",
+  "scripts": {
+    "start": "npx http-server . -p 8000",
+    "dev": "npx http-server . -p 8000"
+  },
+  "keywords": ["movie", "tracker", "webapp", "tmdb", "anime"],
+  "author": "manoj kumar",
+  "license": "MIT",
+  "homepage": "https://movieultra-webapp.vercel.app",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/manojdailycode/movieultra-webapp"
+>>>>>>> origin/main
   }
 }
