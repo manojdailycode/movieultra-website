@@ -1,0 +1,23 @@
+# Dependency directories
+node_modules/
+
+# Local env files
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# Vercel deployment files
+.vercel/
+
+# Build outputs
+dist/
+build/
+
+# System and editor caches
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+*.log

@@ -1,0 +1,432 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="description" content="MovieUltra — Your premium movie, series & anime tracker">
+  <meta name="theme-color" id="metaTheme" content="#0f0f0f">
+  <!-- SEO / OG -->
+  <meta property="og:title" content="MovieUltra — Cinematic Tracker">
+  <meta property="og:description" content="Track every movie, series and anime you watch. Build your personal cinematic library.">
+  <meta property="og:type" content="website">
+  <meta property="og:image" content="https://placehold.co/1200x630/e50914/fff?text=MovieUltra">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="MovieUltra">
+  <meta name="twitter:description" content="Your premium cinematic universe tracker">
+  
+  <title>MovieUltra</title>
+  
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;900&display=swap" rel="stylesheet">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='6' fill='%23e50914'/><text x='50%25' y='55%25' font-family='sans-serif' font-weight='900' font-size='18' fill='white' text-anchor='middle' dominant-baseline='middle'>M</text></svg>">
+  <link rel="stylesheet" href="src/css/main.css">
+</head>
+<body>
+
+<!-- LOGIN SCREEN ───────────────────────────────────── -->
+<div id="loginScreen" role="dialog" aria-modal="true" aria-labelledby="loginTitle">
+  <div class="login-card">
+    <h1 class="login-logo" id="loginTitle">Movie<span>Ultra</span></h1>
+    <p class="login-tagline" id="loginTagline">Your Premium Cinematic Universe Tracker</p>
+    
+    <!-- Display Name (Sign Up only) -->
+    <div class="login-field hidden" id="loginDisplayNameField">
+      <label for="loginDisplayName">Display Name</label>
+      <input type="text" id="loginDisplayName" placeholder="Enter your display name..." autocomplete="name">
+    </div>
+
+    <!-- Email Address -->
+    <div class="login-field">
+      <label for="loginUser">Email Address</label>
+      <input type="email" id="loginUser" placeholder="Enter email..." autocomplete="email">
+    </div>
+
+    <!-- Password (Hidden in Forgot Password) -->
+    <div class="login-field" id="loginPassField">
+      <div style="display:flex; justify-content:space-between; align-items:center">
+        <label for="loginPass">Password</label>
+        <button type="button" class="login-link-btn" id="forgotPassLink">Forgot Password?</button>
+      </div>
+      <input type="password" id="loginPass" placeholder="Enter password..." autocomplete="current-password">
+    </div>
+
+    <button class="btn-login" id="loginBtn">Sign In</button>
+
+    <p class="login-toggle-msg" id="loginToggleMsg">
+      Don't have an account? <button type="button" class="login-link-btn" id="toggleSignUpBtn">Sign Up</button>
+    </p>
+
+    <div class="login-divider">or</div>
+    <button class="btn-demo" id="demoBtn">Load Demo Account</button>
+    <p class="login-footer">MovieUltra v2.0.0 · Track with style</p>
+  </div>
+</div>
+
+<!-- TOP NAV ────────────────────────────────────────── -->
+<header class="top-nav" id="topNav" aria-label="Main Navigation">
+  <button class="icon-btn" id="menuBtn" aria-label="Open menu" aria-expanded="false" aria-controls="sidebar">☰</button>
+  <div class="nav-logo">Movie<span>Ultra</span></div>
+  <div class="nav-links" id="navLinks">
+    <button class="nav-link active" data-view="home">Home</button>
+    <button class="nav-link" data-view="trending">Trending</button>
+    <button class="nav-link" data-view="movies">Movies</button>
+    <button class="nav-link" data-view="series">Series</button>
+    <button class="nav-link" data-view="anime">Anime</button>
+  </div>
+  <div class="nav-right">
+    <button class="icon-btn" id="searchToggle" aria-label="Search">🔍</button>
+    <button class="icon-btn" id="themeBtn" aria-label="Toggle theme">🌓</button>
+    <div class="nav-avatar" id="navAvatar" role="button" tabindex="0" aria-label="View Profile">MU</div>
+  </div>
+</header>
+
+<!-- SIDEBAR ────────────────────────────────────────── -->
+<div class="sb-overlay" id="sidebarOverlay" aria-hidden="true"></div>
+<aside class="sidebar" id="sidebar" aria-label="Sidebar navigation">
+  <div class="sb-head">
+    <div class="sb-logo">Movie<span>Ultra</span></div>
+    <button class="icon-btn" id="sbClose" aria-label="Close sidebar">✕</button>
+  </div>
+  <div class="sb-user" id="sbUserRow" role="button" tabindex="0" aria-label="Profile info">
+    <div class="sb-avatar" id="sbAvatar">MU</div>
+    <div>
+      <div class="sb-username" id="sbUsername">Movie Enthusiast</div>
+      <div class="sb-usersub" id="sbUsersub">0 titles tracked</div>
+    </div>
+  </div>
+  <nav class="sb-nav" id="sbNav" aria-label="Sidebar links">
+    <div class="sb-label">Library</div>
+    <button class="sb-link active" data-view="home"><span class="sb-icon">🏠</span>Home</button>
+    <button class="sb-link" data-view="trending"><span class="sb-icon">🔥</span>Trending</button>
+    <button class="sb-link" data-view="watchlist"><span class="sb-icon">⭐</span>Watchlist</button>
+    <button class="sb-link" data-view="history"><span class="sb-icon">🕒</span>Watch History</button>
+    <button class="sb-link" data-view="analytics"><span class="sb-icon">📊</span>Insights</button>
+
+    <div class="sb-label">Categories</div>
+    <button class="sb-link" data-view="movies"><span class="sb-icon">🎬</span>Movies</button>
+    <button class="sb-link" data-view="series"><span class="sb-icon">TV</span>Web Series</button>
+    <button class="sb-link" data-view="anime"><span class="sb-icon">🌸</span>Anime</button>
+
+    <div class="sb-label">Preferences</div>
+    <button class="sb-link" data-view="profile"><span class="sb-icon">👤</span>Profile</button>
+    <button class="sb-link" data-view="settings"><span class="sb-icon">⚙️</span>Settings</button>
+    <button class="sb-link sb-feedback" data-view="feedback"><span class="sb-icon">💬</span>Feedback</button>
+    
+    <button class="sb-link sb-logout" id="logoutBtn"><span class="sb-icon">🚪</span>Sign Out</button>
+  </nav>
+  <div class="sb-foot">
+    <button class="btn-install hidden" id="pwaInstallBtn">📲 Install App</button>
+  </div>
+</aside>
+
+<!-- SEARCH OVERLAY ─────────────────────────────────── -->
+<div id="searchOverlay" class="search-overlay hidden" role="dialog" aria-modal="true" aria-label="Search database">
+  <button class="modal-close" id="searchCloseBtn" aria-label="Close search">✕</button>
+  <div class="search-bar-wrap">
+    <span class="search-icon-fix">🔍</span>
+    <input type="text" id="searchOverlayInput" placeholder="Search movies, series or anime..." autocomplete="off">
+  </div>
+  <div id="overlaySuggestions" class="suggestions" aria-live="polite"></div>
+</div>
+
+<!-- MAIN CONTENT ───────────────────────────────────── -->
+<main id="mainContent">
+
+  <!-- HOME VIEW -->
+  <section id="view-home" class="view-section active" aria-label="Home Dashboard">
+    <!-- HERO -->
+    <div class="hero">
+      <div class="hero-backdrop" id="heroBackdrop"></div>
+      <div class="hero-vignette" aria-hidden="true"></div>
+      <div class="hero-content">
+        <div class="hero-badge">Featured</div>
+        <h2 class="hero-title" id="heroTitle">Featured Title</h2>
+        <div class="hero-meta" id="heroMeta"></div>
+        <p class="hero-overview" id="heroOverview"></p>
+        <div class="hero-actions">
+          <button class="btn-play" id="heroTrailerBtn">▶ Play Trailer</button>
+          <button class="btn-ghost-hero" id="heroAddBtn">＋ Add to Library</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- SMART ADD BAR -->
+    <div class="add-bar-wrap" id="addBar">
+      <div class="add-bar-inner">
+        <div class="type-chips" aria-label="Select type to search">
+          <button class="chip active" data-type="movie">Movies</button>
+          <button class="chip" data-type="tv">Series</button>
+          <button class="chip" data-type="anime">Anime</button>
+        </div>
+        <div class="add-search-box">
+          <input type="text" id="smartInput" placeholder="Quick search & add..." autocomplete="off" aria-label="Quick search and add to library">
+          <button class="search-btn" id="searchTrigger">＋ Add</button>
+        </div>
+      </div>
+      <div id="addSuggestions" class="suggestions" aria-live="polite"></div>
+    </div>
+
+    <!-- HORIZONTAL ROWS -->
+    <div class="rows-wrap">
+      <div class="content-row">
+        <div class="row-header">
+          <h3 class="row-title">📚 My Collection</h3>
+          <button class="row-more" data-view="watchlist">View All →</button>
+        </div>
+        <div class="row-track" id="libraryRow" aria-label="My Collection highlights"></div>
+      </div>
+
+      <div class="content-row">
+        <div class="row-header">
+          <h3 class="row-title">🕒 Recently Watched</h3>
+          <button class="row-more" data-view="history">View All →</button>
+        </div>
+        <div class="row-track" id="historyRow" aria-label="Watch history highlights"></div>
+      </div>
+
+      <div class="content-row">
+        <div class="row-header">
+          <h3 class="row-title">🔥 Daily Trending</h3>
+          <button class="row-more" data-view="trending">Explore Grid →</button>
+        </div>
+        <div class="row-track" id="trendRow" aria-label="Trending hits"></div>
+      </div>
+
+      <div class="content-row">
+        <div class="row-header">
+          <h3 class="row-title">🌸 Popular Anime</h3>
+          <button class="row-more" data-view="anime">Anime Grid →</button>
+        </div>
+        <div class="row-track" id="animeHomeRow" aria-label="Anime highlights"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- TRENDING GRID -->
+  <section id="view-trending" class="view-section" aria-label="Trending Grid">
+    <div class="view-head">
+      <h2>🔥 Trending Today</h2>
+      <div class="filter-bar" id="trendFilterBar">
+        <button class="fchip active" data-tfilter="all">All</button>
+        <button class="fchip" data-tfilter="movie">Movies</button>
+        <button class="fchip" data-tfilter="tv">Series</button>
+        <button class="fchip" data-tfilter="anime">Anime</button>
+      </div>
+    </div>
+    
+    <div class="poster-grid" id="trendingGrid" aria-label="Trending daily hits grid"></div>
+
+    <div class="pager pager-bottom" id="trendPagerFooter">
+      <button class="btn-page" id="trendPrev" disabled>◀ Prev</button>
+      <span class="pager-info" id="trendPageInfo">Page 1 / 10</span>
+      <button class="btn-page" id="trendNext">Next ▶</button>
+    </div>
+  </section>
+
+  <!-- MOVIES GRID -->
+  <section id="view-movies" class="view-section" aria-label="Movies Grid">
+    <div class="view-head">
+      <h2>🎬 Explore Movies</h2>
+      <div class="filter-bar" id="moviesFilterBar">
+        <button class="fchip active" data-mf="popular">Popular</button>
+        <button class="fchip" data-mf="top_rated">Top Rated</button>
+        <button class="fchip" data-mf="now_playing">Now Playing</button>
+        <button class="fchip" data-mf="upcoming">Upcoming</button>
+      </div>
+    </div>
+    <div class="poster-grid" id="moviesGrid" aria-label="Movies list grid"></div>
+    <div class="pager pager-bottom" id="moviesPagerFooter">
+      <button class="btn-page" id="moviesPrev" disabled>◀ Prev</button>
+      <span class="pager-info" id="moviesPageInfo">Page 1 / 50</span>
+      <button class="btn-page" id="moviesNext">Next ▶</button>
+    </div>
+  </section>
+
+  <!-- SERIES GRID -->
+  <section id="view-series" class="view-section" aria-label="Series Grid">
+    <div class="view-head">
+      <h2>TV Explore Web Series</h2>
+      <div class="filter-bar" id="seriesFilterBar">
+        <button class="fchip active" data-sf="popular">Popular</button>
+        <button class="fchip" data-sf="top_rated">Top Rated</button>
+        <button class="fchip" data-sf="airing_today">Airing Today</button>
+        <button class="fchip" data-sf="on_the_air">On The Air</button>
+      </div>
+    </div>
+    <div class="poster-grid" id="seriesGrid" aria-label="Web Series list grid"></div>
+    <div class="pager pager-bottom" id="seriesPagerFooter">
+      <button class="btn-page" id="seriesPrev" disabled>◀ Prev</button>
+      <span class="pager-info" id="seriesPageInfo">Page 1 / 50</span>
+      <button class="btn-page" id="seriesNext">Next ▶</button>
+    </div>
+  </section>
+
+  <!-- ANIME GRID (genre chips) -->
+  <section id="view-anime" class="view-section" aria-label="Anime Grid">
+    <div class="view-head">
+      <h2>🌸 Explore Anime</h2>
+      <div class="filter-bar" id="animeFilterBar">
+        <button class="fchip active" data-af="bypopularity">Popular</button>
+        <button class="fchip" data-af="favorite">Favorite</button>
+        <button class="fchip" data-af-genre="1">⚔️ Action</button>
+        <button class="fchip" data-af-genre="2">🗺️ Adventure</button>
+        <button class="fchip" data-af-genre="4">😂 Comedy</button>
+        <button class="fchip" data-af-genre="10">🧙 Fantasy</button>
+        <button class="fchip" data-af-genre="24">🚀 Sci-Fi</button>
+        <button class="fchip" data-af-genre="22">🎭 Drama</button>
+        <button class="fchip" data-af-genre="30">😰 Sports</button>
+      </div>
+    </div>
+    <div class="poster-grid" id="animeGrid" aria-label="Anime list grid"></div>
+    <div class="pager pager-bottom" id="animePagerFooter">
+      <button class="btn-page" id="animePrev" disabled>◀ Prev</button>
+      <span class="pager-info" id="animePageInfo">Page 1 / 10</span>
+      <button class="btn-page" id="animeNext">Next ▶</button>
+    </div>
+  </section>
+
+  <!-- WATCHLIST -->
+  <section id="view-watchlist" class="view-section" aria-label="Watchlist">
+    <div class="view-head">
+      <h2>⭐ Watchlist</h2>
+      <div class="filter-bar">
+        <button class="fchip active" data-wf="all">All</button>
+        <button class="fchip" data-wf="movie">Movies</button>
+        <button class="fchip" data-wf="tv">Series</button>
+        <button class="fchip" data-wf="anime">Anime</button>
+      </div>
+    </div>
+    <div class="poster-grid" id="watchlistGrid" aria-label="Watchlist list grid"></div>
+  </section>
+
+  <!-- HISTORY -->
+  <section id="view-history" class="view-section" aria-label="History">
+    <div class="view-head">
+      <h2>🕒 Watch History</h2>
+      <button class="btn-danger btn-sm" id="clearHistoryBtn">Clear All</button>
+    </div>
+    <div class="poster-grid" id="historyGrid" aria-label="Watch history list grid"></div>
+  </section>
+
+  <!-- ANALYTICS -->
+  <section id="view-analytics" class="view-section" aria-label="Analytics">
+    <div class="view-head"><h2>📊 Insights</h2></div>
+    <div id="analyticsContent"></div>
+  </section>
+
+  <!-- PROFILE -->
+  <section id="view-profile" class="view-section" aria-label="Profile">
+    <div id="profileContent"></div>
+  </section>
+
+  <!-- SETTINGS -->
+  <section id="view-settings" class="view-section" aria-label="Settings">
+    <div class="view-head"><h2>⚙️ Settings</h2></div>
+    <div id="settingsContent"></div>
+  </section>
+
+  <!-- FEEDBACK -->
+  <section id="view-feedback" class="view-section" aria-label="Feedback">
+    <div class="view-head"><h2>💬 Feedback</h2></div>
+    <div id="feedbackContent"></div>
+  </section>
+
+</main>
+
+<!-- MOVIE DETAIL MODAL ──────────────────────────────── -->
+<div id="movieModal" class="modal-overlay hidden" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+  <div class="modal-card">
+    <button class="modal-close" id="modalClose" aria-label="Close">✕</button>
+    <div class="modal-hero">
+      <img id="modalBackdrop" src="" alt="" class="modal-backdrop-img" loading="lazy">
+      <div class="modal-hero-vig" aria-hidden="true"></div>
+      <button class="modal-play-btn" id="modalPlayBtn" aria-label="Play trailer">▶</button>
+    </div>
+    <div class="modal-body">
+      <div class="modal-pills" id="modalPills"></div>
+      <h2 class="modal-title" id="modalTitle"></h2>
+      <p class="modal-tagline" id="modalTagline"></p>
+      <p class="modal-overview" id="modalOverview"></p>
+      <div class="modal-genres" id="modalGenres"></div>
+      <!-- Status update row -->
+      <div id="modalStatusRow" class="hidden">
+        <p style="font-size:12px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:8px">Status</p>
+        <div class="status-pills" id="modalStatusPills">
+          <button class="status-pill" data-s="Watching">👁 Watching</button>
+          <button class="status-pill" data-s="Completed">✅ Completed</button>
+          <button class="status-pill" data-s="Planned">📋 Planned</button>
+        </div>
+      </div>
+      <div class="modal-foot" id="modalFoot"></div>
+    </div>
+  </div>
+</div>
+
+<!-- TRAILER MODAL ────────────────────────────────── -->
+<div id="trailerModal" class="modal-overlay hidden" role="dialog" aria-modal="true">
+  <div class="trailer-card">
+    <button class="modal-close" id="trailerClose" aria-label="Close trailer">✕</button>
+    <div class="trailer-ratio">
+      <iframe id="trailerIframe" src="" frameborder="0" title="Trailer"
+        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+    </div>
+  </div>
+</div>
+
+<!-- EDIT PROFILE MODAL ───────────────────────────── -->
+<div id="editProfileModal" class="hidden" role="dialog" aria-modal="true" aria-label="Edit Profile">
+  <div class="ep-card">
+    <div class="ep-head"><div class="ep-title">✏️ Edit Profile</div><button class="ep-close" id="epClose" aria-label="Close">✕</button></div>
+    <div class="ep-body">
+      <!-- Cover Banner Upload -->
+      <div class="ep-banner-wrap">
+        <div class="ep-banner" id="epBanner" role="button" tabindex="0" aria-label="Change cover banner">
+          <div class="ep-banner-overlay">📷 Tap to change cover banner</div>
+        </div>
+        <input type="file" id="epBannerInput" accept="image/*" style="display:none" aria-label="Upload cover banner">
+      </div>
+
+      <div class="ep-av-wrap">
+        <div class="ep-av" id="epAvatar" role="button" tabindex="0" aria-label="Change avatar">
+          <div class="ep-av-overlay">📷</div>
+        </div>
+        <span class="ep-av-hint">Tap to change avatar</span>
+        <input type="file" id="epAvatarInput" accept="image/*" style="display:none" aria-label="Upload avatar">
+      </div>
+      <div class="ep-field"><label for="epName">Display Name</label><input type="text" id="epName" placeholder="Your display name" autocomplete="off"></div>
+      <div class="ep-field"><label for="epUsername">Username</label><input type="text" id="epUsername" placeholder="@username" autocomplete="off"></div>
+      <div class="ep-field"><label for="epBio">Bio / Tagline</label><textarea id="epBio" placeholder="Tell us about your taste in movies…" rows="3"></textarea></div>
+      <div class="ep-field">
+        <label for="epGenre">Favorite Genre</label>
+        <select id="epGenre">
+          <option value="">Select a genre</option>
+          <option>⚔️ Action</option><option>🗺️ Adventure</option><option>🎨 Animation</option>
+          <option>😂 Comedy</option><option>🔍 Crime</option><option>🎥 Documentary</option>
+          <option>🎭 Drama</option><option>🧙 Fantasy</option><option>😱 Horror</option>
+          <option>🔮 Mystery</option><option>💕 Romance</option><option>🚀 Sci-Fi</option><option>😰 Thriller</option>
+        </select>
+      </div>
+      <div class="ep-actions">
+        <button class="btn-cancel" id="epCancel">Cancel</button>
+        <button class="btn-save" id="epSave">Save Changes</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- BOTTOM NAVIGATION (MOBILE) ───────────────────── -->
+<nav class="bottom-nav" aria-label="Bottom navigation">
+  <button class="b-item active" data-view="home"><span>🏠</span>Home</button>
+  <button class="b-item" data-view="trending"><span>🔥</span>Trend</button>
+  <button class="b-item" data-view="watchlist"><span>⭐</span>Saved</button>
+  <button class="b-item" data-view="analytics"><span>📊</span>Stats</button>
+  <button class="b-item" data-view="profile"><span>👤</span>Me</button>
+</nav>
+
+<div id="toasts" aria-live="polite" aria-atomic="false"></div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script type="module" src="src/js/app.js"></script>
+</body>
+</html>

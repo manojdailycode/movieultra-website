@@ -1,0 +1,28 @@
+{
+  "name": "movieultra-webapp",
+  "version": "2.0.0",
+  "description": "Your premium movie, series & anime tracker",
+  "main": "src/js/app.js",
+  "type": "module",
+  "scripts": {
+    "start": "serve -p 5000",
+    "dev": "node dev-server.js",
+    "lint": "eslint src/js/**/*.js"
+  },
+  "keywords": [
+    "movie",
+    "series",
+    "anime",
+    "tracker",
+    "pwa",
+    "vercel"
+  ],
+  "author": "M Manoj V",
+  "license": "MIT",
+  "dependencies": {
+    "serve": "^14.2.1"
+  },
+  "devDependencies": {
+    "eslint": "^8.57.0"
+  }
+}
