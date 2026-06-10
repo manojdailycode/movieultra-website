@@ -4,6 +4,7 @@ import { h } from '../utils/escape.js';
 import { state as userState } from '../store/user.js';
 import { toast } from '../components/toast.js';
 import { readStorage, writeStorage, SK } from '../utils/storage.js';
+import { log } from '../firebase/config.js';
 
 export function renderFeedback() {
   const el = document.getElementById('feedbackContent');
@@ -70,7 +71,7 @@ export function renderFeedback() {
     prev.push(fb);
     writeStorage(SK.feedback, prev);
 
-    console.log('[MovieUltra] Feedback submitted:', fb);
+    log('[MovieUltra] Feedback submitted:', fb);
     toast('✅ Feedback sent! Thank you!');
     
     if (msgInput) msgInput.value = '';

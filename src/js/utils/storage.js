@@ -2,6 +2,8 @@
 
 export const STORAGE_VERSION = 'v2';
 
+import { log } from '../firebase/config.js';
+
 export const SK = {
   lib: `mu_lib_${STORAGE_VERSION}`,
   hist: `mu_hist_${STORAGE_VERSION}`,
@@ -45,7 +47,7 @@ export function migrateStorage() {
     if (oldUser && !readStorage(SK.user, null))  writeStorage(SK.user, oldUser);
     
     localStorage.setItem(`mu_migrated_${STORAGE_VERSION}`, '1');
-    console.log('[MovieUltra] Storage migrated to', STORAGE_VERSION);
+    log('[MovieUltra] Storage migrated to', STORAGE_VERSION);
   } catch (e) {
     console.error('[MovieUltra] Migration failed:', e);
   }

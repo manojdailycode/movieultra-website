@@ -9,7 +9,7 @@ import {
   updateProfile
 } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js';
 
-import { firebaseConfigFallback } from './config.js';
+import { firebaseConfigFallback, log } from './config.js';
 
 let app = null;
 let auth = null;
@@ -77,12 +77,12 @@ async function loadConfig() {
       app = initializeApp(config);
       auth = getAuth(app);
       isMockMode = false;
-      console.log('[MovieUltra] Firebase successfully initialized with keys.');
+      log('[MovieUltra] Firebase successfully initialized with keys.');
     } catch (err) {
       console.warn('[MovieUltra] Firebase initialization failed. Falling back to Mock Mode:', err);
     }
   } else {
-    console.log('[MovieUltra] Running in Mock Authentication Mode.');
+    log('[MovieUltra] Running in Mock Authentication Mode.');
   }
 
   // If in real Firebase mode, bridge Firebase state to our callback system

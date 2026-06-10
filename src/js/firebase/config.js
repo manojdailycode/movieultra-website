@@ -6,3 +6,9 @@ export const firebaseConfigFallback = {
   messagingSenderId: "YOUR_MESSAGING_SENDER_ID",
   appId: "YOUR_APP_ID"
 };
+
+export function log(...args) {
+  if (typeof console !== 'undefined' && typeof console.log === 'function') {
+    console.log(...args);
+  }
+}
