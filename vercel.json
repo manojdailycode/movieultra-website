@@ -1,5 +1,6 @@
 {
   "version": 2,
+  "public": true,
   "headers": [
     {
       "source": "/(.*)",
@@ -30,6 +31,16 @@
           "value": "s-maxage=86400, stale-while-revalidate=43200"
         }
       ]
+    }
+  ],
+  "rewrites": [
+    {
+      "source": "/api/(.*)",
+      "destination": "/api/$1"
+    },
+    {
+      "source": "/(.*)",
+      "destination": "/index.html"
     }
   ]
 }
