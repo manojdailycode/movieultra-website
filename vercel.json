@@ -1,6 +1,7 @@
 {
   "version": 2,
-  "public": true,
+  "buildCommand": "echo 'Static site'",
+  "outputDirectory": ".",
   "headers": [
     {
       "source": "/(.*)",
@@ -20,15 +21,10 @@
         {
           "key": "Referrer-Policy",
           "value": "strict-origin-when-cross-origin"
-        }
-      ]
-    },
-    {
-      "source": "/api/(.*)",
-      "headers": [
+        },
         {
           "key": "Cache-Control",
-          "value": "s-maxage=86400, stale-while-revalidate=43200"
+          "value": "public, max-age=3600, s-maxage=3600"
         }
       ]
     }
@@ -39,7 +35,7 @@
       "destination": "/api/$1"
     },
     {
-      "source": "/(.*)",
+      "source": "/((?!api/).)*",
       "destination": "/index.html"
     }
   ]

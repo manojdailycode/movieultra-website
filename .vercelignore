@@ -1,0 +1,12 @@
+node_modules
+.git
+.github
+.env
+.env.example
+.eslintrc.json
+dev-server.js
+package-lock.json
+CHANGELOG.md
+README.md
+LICENSE
+.vercelignore
