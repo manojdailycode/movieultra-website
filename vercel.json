@@ -1,7 +1,5 @@
 {
   "version": 2,
-  "buildCommand": "echo 'Static site'",
-  "outputDirectory": ".",
   "headers": [
     {
       "source": "/(.*)",
@@ -31,12 +29,11 @@
   ],
   "rewrites": [
     {
-      "source": "/api/(.*)",
-      "destination": "/api/$1"
-    },
-    {
       "source": "/((?!api/).)*",
+    {
+      "source": "/((?!api|src|public|manifest|sw\\.js|index\\.html).)*",
       "destination": "/index.html"
+    }
     }
   ]
 }
