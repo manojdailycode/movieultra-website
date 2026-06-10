@@ -1,0 +1,40 @@
+{
+  "short_name": "MovieUltra",
+  "name": "MovieUltra — Cinematic Tracker",
+  "description": "Track every movie, series and anime you watch. Build your personal cinematic library.",
+  "icons": [
+    {
+      "src": "public/icons/icon-192.svg",
+      "type": "image/svg+xml",
+      "sizes": "192x192",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "public/icons/icon-512.svg",
+      "type": "image/svg+xml",
+      "sizes": "512x512",
+      "purpose": "any maskable"
+    }
+  ],
+  "start_url": "/",
+  "background_color": "#0f0f0f",
+  "theme_color": "#e50914",
+  "display": "standalone",
+  "orientation": "portrait",
+  "shortcuts": [
+    {
+      "name": "Trending",
+      "short_name": "Trending",
+      "description": "View global trending titles",
+      "url": "/#view-trending",
+      "icons": [{ "src": "public/icons/icon-192.svg", "sizes": "192x192" }]
+    },
+    {
+      "name": "Watchlist",
+      "short_name": "Watchlist",
+      "description": "View your saved watchlist",
+      "url": "/#view-watchlist",
+      "icons": [{ "src": "public/icons/icon-192.svg", "sizes": "192x192" }]
+    }
+  ]
+}
