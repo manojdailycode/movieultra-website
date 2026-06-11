@@ -29,11 +29,8 @@
   ],
   "rewrites": [
     {
-      "source": "/((?!api/).)*",
-    {
-      "source": "/((?!api|src|public|manifest|sw\\.js|index\\.html).)*",
+      "source": "/((?!api|src|public|manifest|sw\\.js|index\\.html).*)",
       "destination": "/index.html"
-    }
     }
   ]
 }
