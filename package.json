@@ -1,6 +1,6 @@
 {
   "name": "movieultra-webapp",
-  "version": "2.0.0",
+  "version": "2.0.1",
   "description": "Your premium movie, series & anime tracker",
   "main": "src/js/app.js",
   "type": "module",
@@ -20,6 +20,7 @@
   "author": "M Manoj V",
   "license": "MIT",
   "dependencies": {
+    "dotenv": "^17.4.2",
     "serve": "^14.2.1"
   },
   "devDependencies": {
