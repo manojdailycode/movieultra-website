@@ -29,6 +29,26 @@
   ],
   "rewrites": [
     {
+      "source": "/api/firebase-config",
+      "destination": "/api/firebase-config.js"
+    },
+    {
+      "source": "/api/tmdb",
+      "destination": "/api/tmdb.js"
+    },
+    {
+      "source": "/api/jikan",
+      "destination": "/api/jikan.js"
+    },
+    {
+      "source": "/api/omdb",
+      "destination": "/api/omdb.js"
+    },
+    {
+      "source": "/api/tvmaze",
+      "destination": "/api/tvmaze.js"
+    },
+    {
       "source": "/((?!api(?:/|$))(?!.*\\..*$).*)",
       "destination": "/index.html"
     }
