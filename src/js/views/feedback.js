@@ -32,7 +32,7 @@ export function renderFeedback() {
         <div class="contact-icon">✈️</div>
         <div>
           <div class="contact-lbl">TELEGRAM</div>
-          <div class="contact-val"><a href="https://t.me/Mavillamanoj" target="_blank" rel="noopener">@Mavillamanoj</a></div>
+          <div class="contact-val"><a href="https://t.me/Kakashi_arrine" target="_blank" rel="noopener">@Kakashi_arrine</a></div>
         </div>
       </div>
       <div class="contact-row">

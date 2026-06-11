@@ -1424,7 +1424,7 @@ function renderProfile() {
     <div class="prof-hero">
       <div class="prof-avatar">M</div>
       <h2 class="prof-name">Manoj Kumar</h2>
-      <p class="prof-username">@mavillamanoj</p>
+      <p class="prof-username">amanoj</p>
       <p class="prof-bio">Building my cinematic universe 🎬</p>
       <p class="prof-version">Movie Ultra v${VERSION}</p>
     </div>
@@ -1579,7 +1579,7 @@ function renderFeedback() {
         <div>
           <div class="contact-lbl">TELEGRAM</div>
           <div class="contact-val">
-            <a href="https://t.me/Mavillamanoj" target="_blank" rel="noopener">@Mavillamanoj</a>
+            <a href="https://t.me/Kakashi_arrine" target="_blank" rel="noopener">Kakashi_arrine</a>
           </div>
         </div>
       </div>
