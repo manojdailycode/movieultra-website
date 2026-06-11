@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file.
 
+## [2.0.1] - 2026-06-11
+### Bug Fixes
+- Fix: Prevent bottom navigation from overlapping the search overlay on mobile by hiding the bottom nav while the overlay is open.
+- Misc: Version bump to 2.0.1 and minor metadata updates.
+
+
 ## [2.0.0] - 2026-06-10
 ### Re-Architected Production Release
 - **Separation of Concerns:** Split single HTML bundle `MovieUltra_FINAL(1).html` into an HTML skeleton, 8 CSS stylesheets (main, reset, layout, tokens, animations, view layers, anime components), and 25 JavaScript modules.

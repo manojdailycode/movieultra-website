@@ -1,4 +1,4 @@
-# 🎬 MovieUltra — Premium Cinematic Tracker (v2.0.0)
+# 🎬 MovieUltra — Premium Cinematic Tracker (v2.0.1)
 
 🔗 **Live**: https://movieultra-webapp.vercel.app
 [![Vercel Deployment](https://img.shields.io/badge/Deploy-Vercel-black?logo=vercel)](https://vercel.com)
@@ -6,7 +6,7 @@
 [![PWA Ready](https://img.shields.io/badge/PWA-Ready-green?logo=progressive-web-apps)](manifest.json)
 [![Code Style: Clean ESLint](https://img.shields.io/badge/Style-ESLint-4B32C3?logo=eslint)](package.json)
 
-MovieUltra is a premium tracker for movies, tv series, and anime. Re-architected in v2.0.0 to separate HTML markup, CSS stylesheet structures, client API layers, state storage, and dynamic templates into a modular, production-ready structure.
+MovieUltra is a premium tracker for movies, tv series, and anime. Re-architected in v2.0.0 to separate HTML markup, CSS stylesheet structures, client API layers, state storage, and dynamic templates into a modular, production-ready structure. (patched to v2.0.1)
 
 ---
 
@@ -16,7 +16,7 @@ MovieUltra is a premium tracker for movies, tv series, and anime. Re-architected
 - **Multi-API Caching Services:** Interacts with TMDB and MAL (via Jikan API) with built-in client memory caching.
 - **Jikan Rate-Limit Queue:** Avoids MAL `429 Too Many Requests` API errors by queuing and spacing out search fetches.
 - **Serverless API Proxies:** Includes pre-configured Vercel Serverless proxy handlers to mask keys and enable Edge-caching headers.
-- **PWA Capabilities:** Integrates offline asset caching via Service Worker (v2.0.0), standalone presentation setups, and homescreen loading shortcuts.
+- **PWA Capabilities:** Integrates offline asset caching via Service Worker (v2.0.1), standalone presentation setups, and homescreen loading shortcuts.
 - **Flexible Data Imports:** Export lists as formatted 9-column CSV or Excel sheets, and import files back into your tracker seamlessly.
 
 ---
