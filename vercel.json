@@ -29,7 +29,7 @@
   ],
   "rewrites": [
     {
-      "source": "/((?!api|src|public|manifest|sw\\.js|index\\.html).*)",
+      "source": "/((?!api/|.*\\..*).*)",
       "destination": "/index.html"
     }
   ]
