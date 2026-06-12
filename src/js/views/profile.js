@@ -1,7 +1,8 @@
 'use strict';
 
 import { h } from '../utils/escape.js';
-import { miniCard } from '../components/card.js';
+import { miniCard, wlPreviewCard } from '../components/card.js';
+import { estimateHours, getYear } from '../utils/date.js';
 import { state as userState, saveUser } from '../store/user.js';
 import { state as libState } from '../store/library.js';
 import { state as histState } from '../store/history.js';
@@ -28,7 +29,7 @@ export function renderProfile() {
   const watchedS = watchHist.filter(i => i.type === 'tv').length;
   const watchedA = watchHist.filter(i => i.type === 'anime').length;
   
-  const estHours = Math.round(watchedM * 2 + watchedS * 0.75 + watchedA * 0.4);
+  const estHours = estimateHours(watchedM, watchedS, watchedA);
   const maxW = Math.max(watchedM, watchedS, watchedA, 1);
   
   const autoFav = libM >= libTV && libM >= libA ? 'Movies' : libTV >= libA ? 'Series' : 'Anime';
@@ -36,11 +37,10 @@ export function renderProfile() {
   const favEmoji = user.favoriteGenre ? '❤️' : (autoFav === 'Movies' ? '🎬' : autoFav === 'Series' ? '📺' : '🌸');
   
   const initials = user.name ? user.name.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase() : 'U';
-  const joinYear = user.joinedAt ? new Date(user.joinedAt).getFullYear() : new Date().getFullYear();
+  const joinYear = user.joinedAt ? getYear(user.joinedAt) : new Date().getFullYear();
   
   const recentWatched = watchHist.slice(0, 3);
   const wlPreview = library.slice(0, 3);
-  const NOPOSTER = 'https://placehold.co/300x450/1c1c1c/555?text=No+Image';
 
   el.innerHTML = `
     <div class="prof-header">
@@ -103,21 +103,7 @@ export function renderProfile() {
         <button class="view-all-link" id="profGoWatchlist">View All →</button>
       </div>
       <div class="prof-scroll-wrap">
-        ${wlPreview.map(item => {
-          const t = h(item.title || 'Unknown'), p = item.poster || NOPOSTER, y = h(String(item.year || '')), tp = item.type || 'movie';
-          const dp = encodeURIComponent(p), db = encodeURIComponent(item.backdrop || ''), do_ = encodeURIComponent(item.overview || '');
-          return `<div class="wl-preview-card" role="button" tabindex="0"
-            data-id="${h(String(item.id || ''))}" data-type="${h(tp)}" data-title="${t}"
-            data-year="${y}" data-rating="${h(String(item.rating || ''))}"
-            data-poster="${h(dp)}" data-backdrop="${h(db)}" data-ov="${h(do_)}">
-            <div class="wl-poster-wrap">
-              <img class="wl-poster" src="${h(p)}" alt="${t}" loading="lazy" onerror="this.onerror=null;this.src='${NOPOSTER}'">
-              <div class="wl-type-badge ${h(tp)}">${{ movie: 'Movie', tv: 'Series', anime: 'Anime' }[tp] || tp}</div>
-            </div>
-            <div class="wl-title" title="${t}">${t}</div>
-            ${y ? `<div class="wl-year">${y}</div>` : ''}
-          </div>`;
-        }).join('')}
+        ${wlPreview.map(item => wlPreviewCard(item)).join('')}
       </div>
     </div>` : ''}`;
 

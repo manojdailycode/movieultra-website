@@ -45,7 +45,9 @@ export async function renderAnimeGrid(filter, genreId, page = 1) {
     
     const results = d.data || [];
     state.lastPageLength = results.length;
-    if (results.length < 24) {
+    if (d.pagination && typeof d.pagination.last_visible_page === 'number') {
+      state.absoluteMaxPage = d.pagination.last_visible_page;
+    } else if (results.length < 24) {
       state.absoluteMaxPage = state.animePage;
     }
     

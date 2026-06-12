@@ -43,6 +43,7 @@ export function renderAnalytics() {
       <div class="stat-card"><div class="stat-icon">⭐</div><div class="stat-num">${avg}</div><div class="stat-lbl">Avg Rating</div></div>
       <div class="stat-card"><div class="stat-icon">🎬</div><div class="stat-num">${counts.movie}</div><div class="stat-lbl">Movies</div></div>
       <div class="stat-card"><div class="stat-icon">📺</div><div class="stat-num">${counts.tv}</div><div class="stat-lbl">Series</div></div>
+      <div class="stat-card accent-purple"><div class="stat-icon">🌸</div><div class="stat-num">${counts.anime}</div><div class="stat-lbl">Anime</div></div>
     </div>
     <div class="chart-box">
       <h3>Library Breakdown</h3>

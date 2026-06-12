@@ -20,16 +20,24 @@ export async function getTrending(page = 1, filter = 'all') {
   if (trendCache[key]) return trendCache[key];
   
   let results = [];
+  let totalPages = Infinity;
   if (filter === 'anime') {
     const d = await getTopAnime('bypopularity', page, 20);
     results = (d.data || []).map(fromJikan);
+    if (d.pagination && typeof d.pagination.last_visible_page === 'number') {
+      totalPages = d.pagination.last_visible_page;
+    }
   } else {
     const d = await getTrendingTMDB(page, filter);
     results = (d.results || []).map(r => fromTMDB(r));
+    if (d.total_pages && typeof d.total_pages === 'number') {
+      totalPages = Math.min(d.total_pages, 500);
+    }
   }
   
-  trendCache[key] = results;
-  return results;
+  const data = { results, totalPages };
+  trendCache[key] = data;
+  return data;
 }
 
 export async function renderTrendingGrid(page = 1) {
@@ -42,16 +50,17 @@ export async function renderTrendingGrid(page = 1) {
   spinGrid(grid);
   
   try {
-    const res = await getTrending(page, state.trendFilter);
-    state.lastPageLength = res.length;
-    if (res.length < 20) {
+    const { results, totalPages } = await getTrending(page, state.trendFilter);
+    state.lastPageLength = results.length;
+    state.absoluteMaxPage = totalPages;
+    if (results.length < 20) {
       state.absoluteMaxPage = page;
     }
     
     syncPager(page);
     
-    grid.innerHTML = res.length 
-      ? res.map(i => card(i, { showAdd: true })).join('') 
+    grid.innerHTML = results.length 
+      ? results.map(i => card(i, { showAdd: true })).join('') 
       : '<p class="placeholder-msg">No results.</p>';
       
     // Scroll view wrapper to top gently

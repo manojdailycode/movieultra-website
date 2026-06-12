@@ -5,6 +5,7 @@ import { state as histState, histClearDirect } from '../store/history.js';
 import { saveTheme } from '../store/user.js';
 import { updateSbUser } from '../components/sidebar.js';
 import { toast } from '../components/toast.js';
+import { formatDate } from '../utils/date.js';
 
 export const THEME_META = {
   dark: '#0f0f0f',
@@ -164,17 +165,12 @@ export function exportCSV() {
     toast('Library is empty', 'info');
     return;
   }
-  const today = new Date();
-  const fmtDate = d => {
-    const dt = new Date(d || today);
-    return `${String(dt.getDate()).padStart(2, '0')}-${String(dt.getMonth() + 1).padStart(2, '0')}-${dt.getFullYear()}`;
-  };
   const typeMap = { movie: 'Movie', tv: 'WebSeries', anime: 'Anime' };
   const rows = [
     ['S.No', 'Date', 'Type', 'Name', 'Rating', 'Genre', 'Platform', 'Status', 'Note'],
     ...library.map((i, idx) => [
       idx + 1,
-      fmtDate(i.addedAt),
+      formatDate(i.addedAt),
       typeMap[i.type] || 'Movie',
       i.title,
       i.rating && !isNaN(parseFloat(i.rating)) ? parseFloat(i.rating) : '',
@@ -199,16 +195,12 @@ export function exportExcelPro() {
     return;
   }
 
-  const fmtDate = d => {
-    const dt = new Date(d || Date.now());
-    return `${String(dt.getDate()).padStart(2, '0')}-${String(dt.getMonth() + 1).padStart(2, '0')}-${dt.getFullYear()}`;
-  };
   const typeMap = { movie: 'Movie', tv: 'WebSeries', anime: 'Anime' };
 
   const headers = ['S.No', 'Date', 'Type', 'Name', 'Rating', 'Genre', 'Platform', 'Status', 'Note'];
   const rows = library.map((i, idx) => [
     idx + 1,
-    fmtDate(i.addedAt),
+    formatDate(i.addedAt),
     typeMap[i.type] || 'Movie',
     i.title || '',
     i.rating && !isNaN(parseFloat(i.rating)) ? parseFloat(i.rating) : '',

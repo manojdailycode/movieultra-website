@@ -62,7 +62,13 @@ export async function loadHero() {
     heroItem = pick;
     const safeUrl = heroItem.backdrop || heroItem.poster;
     const heroBackdrop = document.getElementById('heroBackdrop');
-    if (heroBackdrop) heroBackdrop.style.backgroundImage = `url('${safeUrl}')`;
+    if (heroBackdrop) {
+      if (heroBackdrop.tagName === 'IMG') {
+        heroBackdrop.src = safeUrl;
+      } else {
+        heroBackdrop.style.backgroundImage = `url('${safeUrl}')`;
+      }
+    }
     const heroTitle = document.getElementById('heroTitle');
     if (heroTitle) heroTitle.textContent = heroItem.title;
     const heroOverview = document.getElementById('heroOverview');

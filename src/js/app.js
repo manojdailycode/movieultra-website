@@ -736,6 +736,13 @@ function init() {
       document.body.style.overflow = 'hidden';
     }
   });
+
+  // Register PWA Service Worker
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('/sw.js')
+      .then(reg => console.log('[MovieUltra] ServiceWorker registered with scope:', reg.scope))
+      .catch(err => console.warn('[MovieUltra] ServiceWorker registration failed:', err));
+  }
 }
 
 if (document.readyState === 'loading') {

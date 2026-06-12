@@ -47,7 +47,9 @@ export async function renderMoviesGrid(filter, page = 1) {
     
     const results = d.results || [];
     state.lastPageLength = results.length;
-    if (results.length < 20) {
+    if (d.total_pages && typeof d.total_pages === 'number') {
+      state.absoluteMaxPage = Math.min(d.total_pages, 500);
+    } else if (results.length < 20) {
       state.absoluteMaxPage = state.moviesPage;
     }
     
