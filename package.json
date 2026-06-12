@@ -1,6 +1,6 @@
 {
   "name": "movieultra-webapp",
-  "version": "2.0.1",
+  "version": "2.0.2",
   "description": "Your premium movie, series & anime tracker",
   "main": "src/js/app.js",
   "type": "module",

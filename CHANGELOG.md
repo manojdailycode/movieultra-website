@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file.
 
+## [2.0.2] - 2026-06-12
+### Improvements
+- Enhanced Vercel deployment configuration with explicit builds for API and static assets
+- Improved API routing: Added explicit rewrites for all API endpoints (firebase-config, tmdb, jikan, omdb, tvmaze) to prevent 404 errors
+- Fixed SPA routing regex to properly handle client-side routing while preserving API path integrity
+- Updated contact information in feedback view
+
 ## [2.0.1] - 2026-06-11
 ### Bug Fixes
 - Fix: Prevent bottom navigation from overlapping the search overlay on mobile by hiding the bottom nav while the overlay is open.
