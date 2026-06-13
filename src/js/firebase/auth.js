@@ -10,6 +10,7 @@ import {
 } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js';
 
 import { firebaseConfigFallback, log } from './config.js';
+import { configState } from '../store/config.js';
 
 let app = null;
 let auth = null;
@@ -54,17 +55,32 @@ const configPromise = new Promise(resolve => {
 async function loadConfig() {
   let config = null;
   
+  // 0. Check for custom user keys first
+  if (configState.useCustomKeys && configState.firebaseConfig.apiKey && configState.firebaseConfig.projectId) {
+    const proj = configState.firebaseConfig.projectId;
+    config = {
+      apiKey: configState.firebaseConfig.apiKey,
+      authDomain: `${proj}.firebaseapp.com`,
+      projectId: proj,
+      storageBucket: `${proj}.firebasestorage.app`,
+      messagingSenderId: '',
+      appId: configState.firebaseConfig.appId || ''
+    };
+  }
+
   // 1. Try to fetch from serverless API
-  try {
-    const res = await fetch('/api/firebase-config');
-    if (res.ok) {
-      const data = await res.json();
-      if (data.apiKey && !data.apiKey.includes('YOUR_API_KEY')) {
-        config = data;
+  if (!config) {
+    try {
+      const res = await fetch('/api/firebase-config');
+      if (res.ok) {
+        const data = await res.json();
+        if (data.apiKey && !data.apiKey.includes('YOUR_API_KEY')) {
+          config = data;
+        }
       }
+    } catch (err) {
+      // API endpoint doesn't exist locally or offline
     }
-  } catch (err) {
-    // API endpoint doesn't exist locally or offline
   }
 
   // 2. Try static fallback if serverless didn't return keys

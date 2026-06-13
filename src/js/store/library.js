@@ -18,15 +18,15 @@ export function saveLib() {
   writeStorage(SK.lib, state.library);
 }
 
-export function libHas(id, title) {
+export function libHas(id, title, type) {
   if (id != null && id !== '') {
-    return state.library.some(i => String(i.id) === String(id));
+    return state.library.some(i => String(i.id) === String(id) && (!type || i.type === type));
   }
-  return state.library.some(i => i.title.toLowerCase() === (title || '').toLowerCase());
+  return state.library.some(i => i.title.toLowerCase() === (title || '').toLowerCase() && (!type || i.type === type));
 }
 
 export function libAdd(item) {
-  if (libHas(item.id, item.title)) {
+  if (libHas(item.id, item.title, item.type)) {
     return { success: false, msg: `"${item.title}" already in library`, type: 'info' };
   }
   const full = {
@@ -43,13 +43,14 @@ export function libAdd(item) {
   return { success: true, msg: `✅ Added "${item.title}"`, item: full };
 }
 
-export function libRemove(id, title) {
+export function libRemove(id, title, type) {
   const before = state.library.length;
-  state.library = state.library.filter(i =>
-    id != null && id !== ''
-      ? String(i.id) !== String(id)
-      : i.title.toLowerCase() !== (title || '').toLowerCase()
-  );
+  state.library = state.library.filter(i => {
+    if (id != null && id !== '') {
+      return !(String(i.id) === String(id) && (!type || i.type === type));
+    }
+    return !(i.title.toLowerCase() === (title || '').toLowerCase() && (!type || i.type === type));
+  });
   if (state.library.length < before) {
     saveLib();
     storeEvents.emit('library-changed');
@@ -58,8 +59,8 @@ export function libRemove(id, title) {
   return false;
 }
 
-export function libUpdateStatus(id, status) {
-  const item = state.library.find(i => String(i.id) === String(id));
+export function libUpdateStatus(id, status, type) {
+  const item = state.library.find(i => String(i.id) === String(id) && (!type || i.type === type));
   if (!item) return false;
   item.status = status;
   if (status === 'Completed' && !histHas(item.id)) {

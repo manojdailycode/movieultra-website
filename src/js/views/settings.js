@@ -1,7 +1,12 @@
 'use strict';
 
 import { state as libState, libHas, saveLib, clearLibraryDirect } from '../store/library.js';
-import { state as histState, histClearDirect } from '../store/history.js';
+import { state as histState, histClearDirect, saveHist } from '../store/history.js';
+import { seriesState } from '../store/seriesTracker.js';
+import { animeState } from '../store/animeTracker.js';
+import { configState, configKeys, saveConfig, resetAllConfig } from '../store/config.js';
+import { writeStorage, SK } from '../utils/storage.js';
+import { storeEvents } from '../store/events.js';
 import { saveTheme } from '../store/user.js';
 import { updateSbUser } from '../components/sidebar.js';
 import { toast } from '../components/toast.js';
@@ -74,57 +79,178 @@ export function renderSettings() {
   const watchHist = histState.watchHist;
 
   el.innerHTML = `
-    <div class="setting-row">
-      <div><div class="setting-lbl">🎨 Theme</div><div class="setting-desc">${themeNames[theme] || theme} — tap a swatch to switch</div></div>
-      <div class="theme-swatches">
-        ${themes.map(t => `<div class="theme-swatch${t === theme ? ' active' : ''}" data-theme-pick="${t}" title="${themeNames[t]}" style="background:${swatchColors[t]};border-color:${t === theme ? 'var(--text)' : 'var(--border)'}" aria-label="Switch to ${t} theme"></div>`).join('')}
+    <!-- SECTION 1: APPEARANCE -->
+    <div class="settings-section">
+      <h3 class="settings-sec-title">🎨 Appearance</h3>
+      <div class="setting-row">
+        <div><div class="setting-lbl">Theme</div><div class="setting-desc">${themeNames[theme] || theme} — tap a swatch to switch</div></div>
+        <div class="theme-swatches">
+          ${themes.map(t => `<div class="theme-swatch${t === theme ? ' active' : ''}" data-theme-pick="${t}" title="${themeNames[t]}" style="background:${swatchColors[t]};border-color:${t === theme ? 'var(--text)' : 'var(--border)'}" aria-label="Switch to ${t} theme"></div>`).join('')}
+        </div>
+      </div>
+      <div class="setting-row">
+        <div><div class="setting-lbl">Edit Profile</div><div class="setting-desc">Change avatar, name, bio, favorite genre</div></div>
+        <button class="btn-ghost btn-sm" id="st-editprofile">Edit Profile →</button>
       </div>
     </div>
-    <div class="setting-row">
-      <div><div class="setting-lbl">👤 Edit Profile</div><div class="setting-desc">Change avatar, name, bio, genre</div></div>
-      <button class="btn-ghost btn-sm" id="st-editprofile">Edit →</button>
-    </div>
-    <div class="setting-row">
-      <div><div class="setting-lbl">📤 Export Library</div><div class="setting-desc">${library.length} items — Pro schema (9 columns)</div></div>
-      <div class="setting-actions">
-        <button class="btn-ghost btn-sm" id="st-csv">CSV</button>
-        <button class="btn-blue btn-sm" id="st-excel">Excel ✦</button>
-      </div>
-    </div>
-    <div class="setting-row">
-      <div><div class="setting-lbl">📋 Download Template</div><div class="setting-desc">Blank Excel template for manual entry</div></div>
-      <button class="btn-ghost btn-sm" id="st-template">Template</button>
-    </div>
-    <div class="setting-row">
-      <div><div class="setting-lbl">📥 Import Library</div><div class="setting-desc">CSV or Excel (supports both schemas)</div></div>
-      <label class="btn-ghost btn-sm" style="cursor:pointer">Import<input type="file" id="importFile" accept=".csv,.xlsx,.xls" style="display:none" aria-label="Import library file"></label>
-    </div>
-    <div class="setting-row">
-      <div><div class="setting-lbl">🗑️ Clear Library</div><div class="setting-desc">${library.length} items</div></div>
-      <button class="btn-danger btn-sm" id="st-clearlib">Clear All</button>
-    </div>
-    <div class="setting-row">
-      <div><div class="setting-lbl">🕒 Clear History</div><div class="setting-desc">${watchHist.length} items</div></div>
-      <button class="btn-danger btn-sm" id="st-clearhist">Clear</button>
-    </div>
-    <div class="setting-row" id="st-pwaRow" style="display:none">
-      <div><div class="setting-lbl">📲 Install App</div><div class="setting-desc">Add to home screen</div></div>
-      <button class="btn-primary btn-sm" id="st-pwa">Install</button>
-    </div>
-    <div class="setting-row">
-      <div><div class="setting-lbl">ℹ️ About</div><div class="setting-desc">MovieUltra v2.0.0 · TMDB + Jikan APIs</div></div>
-      <span style="font-size:12px;color:var(--text-muted)">v2.0.0</span>
-    </div>`;
 
-  // Dynamic PWA button visibility check
-  if (window.deferredPWA) {
-    const pwaRow = document.getElementById('st-pwaRow');
-    if (pwaRow) pwaRow.style.display = 'flex';
-  }
+    <!-- SECTION 2: STANDALONE CLIENT & CUSTOM API KEYS -->
+    <div class="settings-section">
+      <h3 class="settings-sec-title">🔑 Custom API Keys (Standalone Client)</h3>
+      <div class="setting-row">
+        <div>
+          <div class="setting-lbl">Use Custom API Keys</div>
+          <div class="setting-desc">Bypass server proxies and use your own client-side API keys.</div>
+        </div>
+        <label class="switch-container">
+          <input type="checkbox" id="use-custom-keys-chk" ${configState.useCustomKeys ? 'checked' : ''}>
+          <span class="switch-slider"></span>
+        </label>
+      </div>
+      
+      <div id="custom-keys-panel" class="${configState.useCustomKeys ? '' : 'hidden'}" style="margin-top: 15px; padding: 15px; background: var(--bg2); border: 1px solid var(--border); border-radius: var(--r); display: flex; flex-direction: column; gap: 12px;">
+        <div class="ep-field" style="margin-bottom: 0;">
+          <label for="custom-tmdb-key-input">TMDB v3 API Key</label>
+          <input type="text" id="custom-tmdb-key-input" value="${configState.tmdbKey}" placeholder="Paste TMDB API Key...">
+        </div>
+        <p style="font-size: 11px; color: var(--text-dim); margin-top: -4px;">Used directly for searching movies, anime, and series.</p>
+
+        <div style="border-top: 1px dashed var(--border); margin: 6px 0;"></div>
+        <div class="ep-title" style="font-size: 12px; font-weight: 700; color: var(--text); text-transform: uppercase; letter-spacing: 0.5px;">Firebase Realtime Sync</div>
+        
+        <div class="ep-field" style="margin-bottom: 0;">
+          <label for="custom-firebase-api-key">Firebase API Key</label>
+          <input type="text" id="custom-firebase-api-key" value="${configState.firebaseConfig.apiKey}" placeholder="API Key">
+        </div>
+        <div class="ep-field" style="margin-bottom: 0;">
+          <label for="custom-firebase-project-id">Firebase Project ID</label>
+          <input type="text" id="custom-firebase-project-id" value="${configState.firebaseConfig.projectId}" placeholder="movieultra-xxxx">
+        </div>
+        <div class="ep-field" style="margin-bottom: 0;">
+          <label for="custom-firebase-app-id">Firebase App ID</label>
+          <input type="text" id="custom-firebase-app-id" value="${configState.firebaseConfig.appId}" placeholder="1:xxxx:web:xxxx">
+        </div>
+        <button class="btn-blue btn-sm" id="st-save-api-keys" style="align-self: flex-start; margin-top: 5px;">Save Key Config</button>
+      </div>
+    </div>
+
+    <!-- SECTION 3: BACKUP & RECOVERY -->
+    <div class="settings-section">
+      <h3 class="settings-sec-title">🔄 Backup & Portability</h3>
+      <div class="setting-row">
+        <div><div class="setting-lbl">Full JSON Backup</div><div class="setting-desc">Download all tracking history, episode lists, reviews, and library state in one file.</div></div>
+        <button class="btn-blue btn-sm" id="st-export-json">Export JSON Backup ✦</button>
+      </div>
+      <div class="setting-row">
+        <div><div class="setting-lbl">Restore JSON Backup</div><div class="setting-desc">Restore a previously saved full workspace JSON backup.</div></div>
+        <label class="btn-ghost btn-sm" style="cursor:pointer">Restore Backup<input type="file" id="importFullJsonFile" accept=".json" style="display:none" aria-label="Import full json backup"></label>
+      </div>
+      <div class="setting-row">
+        <div><div class="setting-lbl">Export Library (Classic)</div><div class="setting-desc">Export current watchlist catalog to Excel/CSV.</div></div>
+        <div class="setting-actions">
+          <button class="btn-ghost btn-sm" id="st-csv">CSV</button>
+          <button class="btn-ghost btn-sm" id="st-excel">Excel</button>
+        </div>
+      </div>
+      <div class="setting-row">
+        <div><div class="setting-lbl">Download Import Template</div><div class="setting-desc">Blank Excel sheet for manual catalog entry.</div></div>
+        <button class="btn-ghost btn-sm" id="st-template">Get Template</button>
+      </div>
+      <div class="setting-row">
+        <div><div class="setting-lbl">Import Library (Classic)</div><div class="setting-desc">Import titles list from Excel or CSV sheet.</div></div>
+        <label class="btn-ghost btn-sm" style="cursor:pointer">Import CSV/Excel<input type="file" id="importFile" accept=".csv,.xlsx,.xls" style="display:none" aria-label="Import library file"></label>
+      </div>
+    </div>
+
+    <!-- SECTION 4: PREFERENCES -->
+    <div class="settings-section">
+      <h3 class="settings-sec-title">⚙️ Preferences</h3>
+      <div class="setting-row">
+        <div><div class="setting-lbl">Include Adult Content</div><div class="setting-desc">Toggle adult content in TMDB search results.</div></div>
+        <label class="switch-container">
+          <input type="checkbox" id="pref-adult-content-chk" ${configState.adultContent ? 'checked' : ''}>
+          <span class="switch-slider"></span>
+        </label>
+      </div>
+      <div class="setting-row">
+        <div><div class="setting-lbl">Image Quality</div><div class="setting-desc">Switch to lower resolution posters/backdrops to save data.</div></div>
+        <select id="pref-image-quality-select" style="background: var(--surface2); color: var(--text); border: 1px solid var(--border); padding: 6px 12px; border-radius: var(--r); font-family: inherit; font-size: 13px;">
+          <option value="high" ${configState.imageQuality === 'high' ? 'selected' : ''}>High Definition</option>
+          <option value="low" ${configState.imageQuality === 'low' ? 'selected' : ''}>Data Saver</option>
+        </select>
+      </div>
+      <div class="setting-row">
+        <div><div class="setting-lbl">Default View Layout</div><div class="setting-desc">Set default appearance style for homepage showcase.</div></div>
+        <select id="pref-default-layout-select" style="background: var(--surface2); color: var(--text); border: 1px solid var(--border); padding: 6px 12px; border-radius: var(--r); font-family: inherit; font-size: 13px;">
+          <option value="showcase" ${configState.defaultLayout === 'showcase' ? 'selected' : ''}>Showcase Carousel</option>
+          <option value="grid" ${configState.defaultLayout === 'grid' ? 'selected' : ''}>Simple Grid</option>
+        </select>
+      </div>
+    </div>
+
+    <!-- SECTION 5: DANGER ZONE -->
+    <div class="settings-section danger-zone" style="border: 1px solid rgba(229,9,20,.2); padding: 15px; border-radius: var(--r); background: rgba(229,9,20,.02);">
+      <h3 class="settings-sec-title" style="color: var(--red);">⚠️ Danger Zone</h3>
+      <div class="setting-row" style="border-bottom: 1px solid var(--border2); padding-bottom: 12px;">
+        <div><div class="setting-lbl">Clear Library</div><div class="setting-desc">Delete all titles currently in your collection (${library.length} items).</div></div>
+        <button class="btn-danger btn-sm" id="st-clearlib">Clear Library</button>
+      </div>
+      <div class="setting-row" style="border-bottom: 1px solid var(--border2); padding: 12px 0;">
+        <div><div class="setting-lbl">Clear Watch History</div><div class="setting-desc">Delete tracking history logs (${watchHist.length} items).</div></div>
+        <button class="btn-danger btn-sm" id="st-clearhist">Clear History</button>
+      </div>
+      <div class="setting-row" style="padding-top: 12px;">
+        <div><div class="setting-lbl">Factory Reset App</div><div class="setting-desc">Delete all custom keys, library datasets, tracking status, and user session values.</div></div>
+        <button class="btn-danger btn-sm" id="st-factory-reset">Factory Reset</button>
+      </div>
+    </div>
+
+    <!-- ABOUT SECTION -->
+    <div class="setting-row" style="margin-top: 25px; opacity: 0.7;">
+      <div><div class="setting-lbl">About MovieUltra</div><div class="setting-desc">MovieUltra v2.1.0 · Powered by TMDB + Jikan APIs</div></div>
+      <span style="font-size:12px;color:var(--text-muted)">v2.1.0</span>
+    </div>
+  `;
 
   // Bind Swatches
   el.querySelectorAll('[data-theme-pick]').forEach(sw => {
     sw.addEventListener('click', () => applyTheme(sw.dataset.themePick));
+  });
+
+  // Toggle custom keys panel
+  const useCustomKeysChk = document.getElementById('use-custom-keys-chk');
+  const customKeysPanel = document.getElementById('custom-keys-panel');
+  useCustomKeysChk?.addEventListener('change', () => {
+    const checked = useCustomKeysChk.checked;
+    saveConfig(configKeys.useCustomKeys, checked);
+    if (checked) {
+      customKeysPanel?.classList.remove('hidden');
+      toast('Custom API keys mode enabled. Save keys below to apply.', 'info');
+    } else {
+      customKeysPanel?.classList.add('hidden');
+      toast('Proxy APIs restored. Reloading page to apply...', 'info');
+      setTimeout(() => {
+        window.location.reload();
+      }, 1500);
+    }
+  });
+
+  // Save API keys
+  document.getElementById('st-save-api-keys')?.addEventListener('click', () => {
+    const tmdbKey = document.getElementById('custom-tmdb-key-input')?.value.trim() || '';
+    const fbApiKey = document.getElementById('custom-firebase-api-key')?.value.trim() || '';
+    const fbProjectId = document.getElementById('custom-firebase-project-id')?.value.trim() || '';
+    const fbAppId = document.getElementById('custom-firebase-app-id')?.value.trim() || '';
+
+    saveConfig(configKeys.tmdbKey, tmdbKey);
+    saveConfig(configKeys.firebaseApiKey, fbApiKey);
+    saveConfig(configKeys.firebaseProjectId, fbProjectId);
+    saveConfig(configKeys.firebaseAppId, fbAppId);
+
+    toast('✅ Keys saved! Reloading to apply credentials...', 'info');
+    setTimeout(() => {
+      window.location.reload();
+    }, 1500);
   });
 
   // Bind Clicks
@@ -135,6 +261,29 @@ export function renderSettings() {
   document.getElementById('st-excel')?.addEventListener('click', exportExcelPro);
   document.getElementById('st-template')?.addEventListener('click', downloadTemplate);
   
+  // JSON Backup exports
+  document.getElementById('st-export-json')?.addEventListener('click', exportFullJSON);
+  
+  // Preferences change listeners
+  const adultContentChk = document.getElementById('pref-adult-content-chk');
+  adultContentChk?.addEventListener('change', () => {
+    saveConfig(configKeys.adultContent, adultContentChk.checked);
+    toast(`Adult Content: ${adultContentChk.checked ? 'Enabled' : 'Disabled'}`);
+  });
+
+  const imgQualitySelect = document.getElementById('pref-image-quality-select');
+  imgQualitySelect?.addEventListener('change', () => {
+    saveConfig(configKeys.imageQuality, imgQualitySelect.value);
+    toast(`Image Quality: ${imgQualitySelect.value === 'high' ? 'HD Resolution' : 'Data Saver'}`);
+  });
+
+  const layoutSelect = document.getElementById('pref-default-layout-select');
+  layoutSelect?.addEventListener('change', () => {
+    saveConfig(configKeys.defaultLayout, layoutSelect.value);
+    toast(`Layout preference set to ${layoutSelect.value}`);
+  });
+
+  // Danger actions
   document.getElementById('st-clearlib')?.addEventListener('click', () => {
     if (!confirm(`Delete all ${libState.library.length} items?`)) return;
     clearLibraryDirect();
@@ -150,12 +299,29 @@ export function renderSettings() {
     renderSettings();
   });
 
-  document.getElementById('st-pwa')?.addEventListener('click', () => {
-    if (window.installPWA) window.installPWA();
+  document.getElementById('st-factory-reset')?.addEventListener('click', () => {
+    if (!confirm('🚨 WARNING: This will factory reset MovieUltra. All lists, history, and keys will be permanently deleted! Proceed?')) return;
+    if (!confirm('Are you absolutely sure? This cannot be undone.')) return;
+    
+    // Clear storage and reset states
+    localStorage.clear();
+    resetAllConfig();
+    
+    toast('Factory reset completed. Reloading...', 'info');
+    setTimeout(() => {
+      window.location.reload();
+    }, 1500);
   });
 
   document.getElementById('importFile')?.addEventListener('change', function() {
     importLibrary(this);
+  });
+
+  document.getElementById('importFullJsonFile')?.addEventListener('change', function() {
+    if (this.files[0]) {
+      importFullJSON(this.files[0]);
+      this.value = '';
+    }
   });
 }
 
@@ -248,7 +414,7 @@ export function exportExcelPro() {
   ws['E1'].c = [{ t: 'Rating: numeric value 1-10' }];
 
   const instr = [
-    ['MovieUltra v2.0.0 — Library Template'],
+    ['MovieUltra v2.1.0 — Library Template'],
     [''],
     ['Column', 'Format / Options', 'Example'],
     ['S.No', 'Auto-increment number', '1'],
@@ -363,6 +529,7 @@ export async function importLibrary(input) {
       }
     });
     saveLib();
+    storeEvents.emit('library-changed');
     updateSbUser();
     toast(`Imported ${added} item${added !== 1 ? 's' : ''} ✓`);
     
@@ -371,6 +538,122 @@ export async function importLibrary(input) {
   } catch (err) {
     console.error('[MovieUltra] Import failed:', err);
     toast('Import failed — check file format', 'err');
+  }
+}
+
+export function exportFullJSON() {
+  const exportPayload = {
+    version: '2.1.0',
+    exportDate: new Date().toISOString(),
+    library: libState.library,
+    watchHist: histState.watchHist,
+    seriesProgress: seriesState.progress,
+    seriesDiary: seriesState.diary,
+    seriesEpisodes: seriesState.episodes,
+    seriesHistory: seriesState.history,
+    animeProgress: animeState.progress,
+    animeDiary: animeState.diary,
+    animeEpisodes: animeState.episodes,
+    animeHistory: animeState.history,
+    config: {
+      useCustomKeys: configState.useCustomKeys,
+      tmdbKey: configState.tmdbKey,
+      firebaseConfig: configState.firebaseConfig,
+      adultContent: configState.adultContent,
+      imageQuality: configState.imageQuality,
+      defaultLayout: configState.defaultLayout
+    }
+  };
+
+  const blob = new Blob([JSON.stringify(exportPayload, null, 2)], { type: 'application/json' });
+  downloadHelper(blob, `MovieUltra_Full_Backup_${new Date().toISOString().split('T')[0]}.json`);
+  toast('Full JSON backup exported ✓');
+}
+
+export async function importFullJSON(file) {
+  try {
+    const text = await new Promise((resolve, reject) => {
+      const r = new FileReader();
+      r.onload = () => resolve(r.result);
+      r.onerror = reject;
+      r.readAsText(file);
+    });
+    
+    const data = JSON.parse(text);
+    if (!data.library || !data.watchHist) {
+      throw new Error('Invalid backup file structure.');
+    }
+    
+    // Restore library
+    libState.library = data.library || [];
+    saveLib();
+    
+    // Restore watch history
+    histState.watchHist = data.watchHist || [];
+    saveHist();
+    
+    // Restore series progress
+    if (data.seriesProgress) {
+      Object.assign(seriesState.progress, data.seriesProgress);
+      writeStorage(SK.seriesProgress, seriesState.progress);
+    }
+    if (data.seriesDiary) {
+      Object.assign(seriesState.diary, data.seriesDiary);
+      writeStorage(SK.seriesDiary, seriesState.diary);
+    }
+    if (data.seriesEpisodes) {
+      Object.assign(seriesState.episodes, data.seriesEpisodes);
+      writeStorage(SK.seriesEpisodes, seriesState.episodes);
+    }
+    if (data.seriesHistory) {
+      seriesState.history.length = 0;
+      data.seriesHistory.forEach(item => seriesState.history.push(item));
+      writeStorage(SK.seriesHistory, seriesState.history);
+    }
+    
+    // Restore anime progress
+    if (data.animeProgress) {
+      Object.assign(animeState.progress, data.animeProgress);
+      writeStorage(SK.animeProgress, animeState.progress);
+    }
+    if (data.animeDiary) {
+      Object.assign(animeState.diary, data.animeDiary);
+      writeStorage(SK.animeDiary, animeState.diary);
+    }
+    if (data.animeEpisodes) {
+      Object.assign(animeState.episodes, data.animeEpisodes);
+      writeStorage(SK.animeEpisodes, animeState.episodes);
+    }
+    if (data.animeHistory) {
+      animeState.history.length = 0;
+      data.animeHistory.forEach(item => animeState.history.push(item));
+      writeStorage(SK.animeHistory, animeState.history);
+    }
+    
+    // Restore configs
+    if (data.config) {
+      saveConfig(configKeys.useCustomKeys, !!data.config.useCustomKeys);
+      saveConfig(configKeys.tmdbKey, data.config.tmdbKey || '');
+      if (data.config.firebaseConfig) {
+        saveConfig(configKeys.firebaseApiKey, data.config.firebaseConfig.apiKey || '');
+        saveConfig(configKeys.firebaseProjectId, data.config.firebaseConfig.projectId || '');
+        saveConfig(configKeys.firebaseAppId, data.config.firebaseConfig.appId || '');
+      }
+      saveConfig(configKeys.adultContent, !!data.config.adultContent);
+      saveConfig(configKeys.imageQuality, data.config.imageQuality || 'high');
+      saveConfig(configKeys.defaultLayout, data.config.defaultLayout || 'showcase');
+    }
+    
+    storeEvents.emit('library-changed');
+    storeEvents.emit('history-changed');
+    storeEvents.emit('series-updated');
+    storeEvents.emit('anime-updated');
+    
+    toast('✅ Full backup restored successfully!');
+    renderSettings();
+  } catch (err) {
+    console.error('[MovieUltra] Full restore failed:', err);
+    toast('Import failed — check backup file format', 'err');
   }
 }
 
@@ -428,5 +711,5 @@ function downloadHelper(blob, name) {
 }
 
 export function initSettingsListeners() {
-  // Listeners are dynamically bound in renderSettings to handle theme selector switches and options correctly.
+  // Config state triggers rendering layout dynamic binding elements.
 }

@@ -10,6 +10,14 @@ export const SK = {
   user: `mu_user_${STORAGE_VERSION}`,
   theme: 'mu_theme',
   feedback: 'mu_feedback',
+  seriesProgress: `mu_series_progress_${STORAGE_VERSION}`,
+  seriesDiary: `mu_series_diary_${STORAGE_VERSION}`,
+  seriesEpisodes: `mu_series_episodes_${STORAGE_VERSION}`,
+  seriesHistory: `mu_series_history_${STORAGE_VERSION}`,
+  animeProgress: `mu_anime_progress_${STORAGE_VERSION}`,
+  animeDiary: `mu_anime_diary_${STORAGE_VERSION}`,
+  animeEpisodes: `mu_anime_episodes_${STORAGE_VERSION}`,
+  animeHistory: `mu_anime_history_${STORAGE_VERSION}`,
 };
 
 export function readStorage(key, fallback) {
@@ -38,7 +46,7 @@ export function writeStorage(key, val) {
 export function migrateStorage() {
   try {
     if (localStorage.getItem(`mu_migrated_${STORAGE_VERSION}`)) return;
-    const oldLib  = readStorage('mu_lib_v9', null) || readStorage('mu_lib_v8', null) || readStorage('mu_lib', null);
+    const oldLib  = readStorage('mu_lib_v9', null) || readStorage('mu_lib_v8', null) || readStorage('mu_lib', null) || readStorage('mu_lib_v1', null);
     const oldHist = readStorage('mu_hist_v9', null) || readStorage('mu_hist_v8', null) || readStorage('mu_hist', null);
     const oldUser = readStorage('mu_user_v9', null) || readStorage('mu_user_v8', null) || readStorage('mu_user', null);
     

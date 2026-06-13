@@ -1,37 +1,57 @@
 /* ── DESIGN TOKENS ───────────────────────────────── */
 :root {
-  --bg:         #0f0f0f;
-  --bg2:        #141414;
-  --surface:    #1c1c1c;
-  --surface2:   #242424;
-  --surface3:   #2e2e2e;
-  --surface4:   #383838;
-  --border:     rgba(255,255,255,.09);
-  --border2:    rgba(255,255,255,.06);
-  --text:       #ececec;
-  --text-dim:   #909090;
-  --text-muted: #4a4a4a;
-  --red:        #e50914;
-  --red-hover:  #f40612;
-  --red-dim:    rgba(229,9,20,.14);
-  --gold:       #f5c518;
-  --gold-dim:   rgba(245,197,24,.15);
-  --green:      #46d369;
-  --green-dim:  rgba(70,211,105,.14);
-  --blue:       #3b82f6;
-  --blue-dim:   rgba(59,130,246,.14);
-  --purple:     #a855f7;
-  --purple-dim: rgba(168,85,247,.14);
-  --orange:     #f97316;
-  --orange-dim: rgba(249,115,22,.14);
-  --nav-h:      60px;
-  --sb-w:       272px;
-  --r:          10px;
-  --r-lg:       16px;
-  --r-xl:       20px;
-  --shadow:     0 8px 32px rgba(0,0,0,.65);
-  --shadow-sm:  0 2px 12px rgba(0,0,0,.45);
-  --shadow-card:0 4px 20px rgba(0,0,0,.5);
+  /* HSL Tailored Dark Theme */
+  --bg-h:       220;
+  --bg-s:       15%;
+  --bg-l:       6%;
+  --bg:         hsl(var(--bg-h), var(--bg-s), var(--bg-l));
+  --bg2:        hsl(var(--bg-h), var(--bg-s), calc(var(--bg-l) + 3%));
+  --surface:    hsl(var(--bg-h), var(--bg-s), calc(var(--bg-l) + 7%));
+  --surface2:   hsl(var(--bg-h), var(--bg-s), calc(var(--bg-l) + 11%));
+  --surface3:   hsl(var(--bg-h), var(--bg-s), calc(var(--bg-l) + 15%));
+  --surface4:   hsl(var(--bg-h), var(--bg-s), calc(var(--bg-l) + 20%));
+  
+  --border:     hsla(0, 0%, 100%, 0.08);
+  --border2:    hsla(0, 0%, 100%, 0.05);
+  --text:       hsl(var(--bg-h), 20%, 93%);
+  --text-dim:   hsl(var(--bg-h), 12%, 65%);
+  --text-muted: hsl(var(--bg-h), 10%, 40%);
+  
+  /* Curated Premium Primary & Accent colors */
+  --red-h:      348;
+  --red-s:      83%;
+  --red-l:      47%;
+  --red:        hsl(var(--red-h), var(--red-s), var(--red-l));
+  --red-hover:  hsl(var(--red-h), var(--red-s), calc(var(--red-l) - 5%));
+  --red-dim:    hsla(var(--red-h), var(--red-s), var(--red-l), 0.12);
+  --red-glow:   0 0 20px hsla(var(--red-h), var(--red-s), var(--red-l), 0.4);
+  
+  --gold:       hsl(42, 94%, 55%);
+  --gold-dim:   hsla(42, 94%, 55%, 0.12);
+  
+  --green:      hsl(142, 70%, 45%);
+  --green-dim:  hsla(142, 70%, 45%, 0.12);
+  
+  --blue:       hsl(217, 91%, 60%);
+  --blue-dim:   hsla(217, 91%, 60%, 0.12);
+  
+  --purple:     hsl(271, 91%, 65%);
+  --purple-dim: hsla(271, 91%, 65%, 0.12);
+  
+  --orange:     hsl(24, 95%, 53%);
+  --orange-dim: hsla(24, 95%, 53%, 0.12);
+  
+  /* Layout dimensions & rounding */
+  --nav-h:      64px;
+  --sb-w:       280px;
+  --r:          12px;
+  --r-lg:       18px;
+  --r-xl:       24px;
+  
+  /* Modern shadows & glassmorphism border */
+  --shadow:     0 12px 40px rgba(0, 0, 0, 0.5);
+  --shadow-sm:  0 4px 16px rgba(0, 0, 0, 0.3);
+  --shadow-card:0 8px 30px rgba(0, 0, 0, 0.4);
 }
 
 /* Light Theme */

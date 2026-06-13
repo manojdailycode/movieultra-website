@@ -1,3 +1,28 @@
+import * as mockDb from './mockDb.js';
+
+function getMockResponse(path) {
+  try {
+    const parsedUrl = new URL(path, 'http://localhost');
+    const pathname = parsedUrl.pathname;
+    const searchParams = parsedUrl.searchParams;
+
+    if (pathname === '/top/anime') {
+      return mockDb.getTopAnime(searchParams.get('filter') || 'bypopularity', parseInt(searchParams.get('page') || 1));
+    }
+    if (pathname === '/anime') {
+      return mockDb.searchAnime(searchParams.get('q'), searchParams.get('genres'), parseInt(searchParams.get('page') || 1));
+    }
+    const detailMatch = pathname.match(/^\/anime\/(\d+)\/full$/) || pathname.match(/^\/anime\/(\d+)$/);
+    if (detailMatch) {
+      const [, id] = detailMatch;
+      return mockDb.getAnimeDetails(id);
+    }
+  } catch (e) {
+    console.error(`Error parsing path for mock response: ${path}`, e);
+  }
+  return { data: [] };
+}
+
 export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Credentials', true);
   res.setHeader('Access-Control-Allow-Origin', '*');
@@ -22,12 +47,17 @@ export default async function handler(req, res) {
   try {
     const apiRes = await fetch(url);
     if (!apiRes.ok) {
-      return res.status(apiRes.status).json({ error: `Jikan API error: ${apiRes.statusText}` });
+      console.warn(`[Jikan API Proxy] API request failed with status ${apiRes.status}. Using mock fallback.`);
+      const data = getMockResponse(path);
+      return res.status(200).json(data);
     }
     const data = await apiRes.json();
     res.setHeader('Cache-Control', 's-maxage=86400, stale-while-revalidate=43200');
     return res.status(200).json(data);
   } catch (err) {
-    return res.status(500).json({ error: err.message });
+    console.warn(`[Jikan API Proxy] Fetch error: ${err.message}. Using mock fallback.`);
+    const data = getMockResponse(path);
+    return res.status(200).json(data);
   }
 }
+

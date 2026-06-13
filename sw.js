@@ -91,6 +91,12 @@ self.addEventListener('fetch', e => {
           caches.open(CACHE_NAME).then(cache => cache.put(e.request, cacheCopy));
         }
         return networkResponse;
+      }).catch(err => {
+        console.warn('[SW] Fetch failed for:', e.request.url, err);
+        return new Response(JSON.stringify({ error: 'Network fetch failed (CORS/Offline)' }), {
+          status: 503,
+          headers: { 'Content-Type': 'application/json' }
+        });
       });
     })
   );

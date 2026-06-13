@@ -52,12 +52,35 @@ export const jikanQueue = new JikanQueue();
 
 const apiCache = {};
 
+import { configState } from '../store/config.js';
+
 export async function fetchTMDB(path, params = {}) {
   const cacheKey = `tmdb:${path}:${JSON.stringify(params)}`;
   if (apiCache[cacheKey]) return apiCache[cacheKey];
 
+  // Direct fetch if using custom TMDB key
+  if (configState.useCustomKeys && configState.tmdbKey) {
+    const directUrl = new URL(`https://api.themoviedb.org/3${path}`);
+    directUrl.searchParams.set('api_key', configState.tmdbKey);
+    if (configState.adultContent) {
+      directUrl.searchParams.set('include_adult', 'true');
+    }
+    Object.entries(params).forEach(([k, v]) => directUrl.searchParams.set(k, v));
+
+    const res = await fetch(directUrl.toString());
+    if (!res.ok) {
+      throw new Error(`TMDB Custom API ${res.status}: ${res.statusText}`);
+    }
+    const data = await res.json();
+    apiCache[cacheKey] = data;
+    return data;
+  }
+
   const proxyUrl = new URL('/api/tmdb', window.location.origin);
   proxyUrl.searchParams.set('path', path);
+  if (configState.adultContent) {
+    proxyUrl.searchParams.set('include_adult', 'true');
+  }
   Object.entries(params).forEach(([k, v]) => proxyUrl.searchParams.set(k, v));
 
   try {
@@ -75,7 +98,11 @@ export async function fetchTMDB(path, params = {}) {
     console.warn('[MovieUltra] TMDB Proxy failed, falling back to direct API:', proxyError.message);
     
     const directUrl = new URL(`https://api.themoviedb.org/3${path}`);
-    directUrl.searchParams.set('api_key', 'cf73f47a609d2e71e31813358f64cb2f');
+    const key = (configState.useCustomKeys && configState.tmdbKey) ? configState.tmdbKey : 'cf73f47a609d2e71e31813358f64cb2f';
+    directUrl.searchParams.set('api_key', key);
+    if (configState.adultContent) {
+      directUrl.searchParams.set('include_adult', 'true');
+    }
     Object.entries(params).forEach(([k, v]) => directUrl.searchParams.set(k, v));
 
     const res = await fetch(directUrl.toString());

@@ -1397,3 +1397,84 @@
     -webkit-line-clamp: 3;
   }
 }
+
+/* Custom Settings UI additions */
+.settings-section {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--r-lg);
+  padding: 20px;
+  margin-bottom: 25px;
+  box-shadow: var(--shadow-card);
+}
+
+.settings-sec-title {
+  font-size: 14px;
+  font-weight: 800;
+  color: var(--text-dim);
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+  margin-bottom: 18px;
+  border-bottom: 1.5px dashed var(--border2);
+  padding-bottom: 8px;
+}
+
+/* Styled Switch (Checkbox Toggle) */
+.switch-container {
+  position: relative;
+  display: inline-block;
+  width: 44px;
+  height: 24px;
+  flex-shrink: 0;
+}
+
+.switch-container input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.switch-slider {
+  position: absolute;
+  cursor: pointer;
+  inset: 0;
+  background-color: var(--surface3);
+  border: 1px solid var(--border);
+  border-radius: 34px;
+  transition: all 0.3s;
+}
+
+.switch-slider:before {
+  position: absolute;
+  content: "";
+  height: 16px;
+  width: 16px;
+  left: 3px;
+  bottom: 3px;
+  background-color: var(--text);
+  border-radius: 50%;
+  transition: transform 0.3s;
+}
+
+.switch-container input:checked + .switch-slider {
+  background-color: var(--red);
+  border-color: var(--red-hover);
+}
+
+.switch-container input:checked + .switch-slider:before {
+  transform: translateX(20px);
+}
+
+/* Rating bar chart style additions */
+.rating-bar:hover {
+  opacity: 1 !important;
+  transform: scaleY(1.05);
+}
+
+/* Grid Layout preference */
+body.layout-grid-only .hero {
+  display: none;
+}
+body.layout-grid-only #view-home {
+  padding-top: 20px;
+}

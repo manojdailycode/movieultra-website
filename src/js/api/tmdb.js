@@ -1,10 +1,21 @@
 'use strict';
 
 import { fetchTMDB } from '../utils/request.js';
+import { configState } from '../store/config.js';
 
-const W500 = 'https://image.tmdb.org/t/p/w500';
-const W1280 = 'https://image.tmdb.org/t/p/w1280';
 const NOPOSTER = 'https://placehold.co/300x450/1c1c1c/555?text=No+Image';
+
+function getPosterPath(path) {
+  if (!path) return NOPOSTER;
+  const size = configState.imageQuality === 'low' ? 'w342' : 'w500';
+  return `https://image.tmdb.org/t/p/${size}${path}`;
+}
+
+function getBackdropPath(path) {
+  if (!path) return '';
+  const size = configState.imageQuality === 'low' ? 'w780' : 'w1280';
+  return `https://image.tmdb.org/t/p/${size}${path}`;
+}
 
 /**
  * Normalizes a TMDB result to the internal MovieUltra schema.
@@ -16,8 +27,8 @@ export function fromTMDB(t, forceType) {
     title: t.title || t.name || 'Unknown',
     year: (t.release_date || t.first_air_date || '').split('-')[0] || 'N/A',
     rating: t.vote_average ? Number(t.vote_average).toFixed(1) : 'N/A',
-    poster: t.poster_path ? `${W500}${t.poster_path}` : NOPOSTER,
-    backdrop: t.backdrop_path ? `${W1280}${t.backdrop_path}` : '',
+    poster: getPosterPath(t.poster_path),
+    backdrop: getBackdropPath(t.backdrop_path),
     overview: (t.overview || '').slice(0, 500),
     genre: '',
     platform: '',
@@ -40,7 +51,13 @@ export async function searchTMDB(query, type = 'movie') {
 }
 
 export async function getDetailsTMDB(type, id) {
-  const data = await fetchTMDB(`/${type}/${id}`, { append_to_response: 'videos' });
+  const params = { append_to_response: 'videos' };
+  if (type === 'movie') {
+    params.append_to_response = 'credits,videos,keywords,similar,recommendations,reviews,watch/providers,release_dates,external_ids';
+  } else if (type === 'tv') {
+    params.append_to_response = 'credits,videos,keywords,similar,recommendations,reviews,watch/providers,content_ratings,external_ids';
+  }
+  const data = await fetchTMDB(`/${type}/${id}`, params);
   return data;
 }
 
@@ -71,5 +88,10 @@ export async function getAiringTodayTMDB(page = 1) {
 
 export async function getOnTheAirTMDB(page = 1) {
   const data = await fetchTMDB('/tv/on_the_air', { page });
+  return data;
+}
+
+export async function getSeasonDetailsTMDB(tvId, seasonNumber) {
+  const data = await fetchTMDB(`/tv/${tvId}/season/${seasonNumber}`);
   return data;
 }

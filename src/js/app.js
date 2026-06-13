@@ -129,6 +129,8 @@ import {
   renderFeedback
 } from './views/feedback.js';
 
+import { configState } from './store/config.js';
+
 /* ─── DEMO DATA ──────────────────────────────────────── */
 const DEMO_USER = {
   name: 'Manoj V',
@@ -218,7 +220,7 @@ document.getElementById('mainContent')?.addEventListener('click', e => {
         if (added.msg) toast(added.msg, added.type || 'ok');
       }
       if (action === 'remove') {
-        libRemove(item.id, item.title);
+        libRemove(item.id, item.title, item.type);
         toast('Removed from library', 'info');
       }
       if (action === 'watch') {
@@ -574,17 +576,20 @@ document.getElementById('loginPass')?.addEventListener('keydown', e => {
 
 document.getElementById('demoBtn')?.addEventListener('click', () => {
   // Reset library and history with demo sets
-  clearLibraryDirect();
+  libState.library.length = 0;
   DEMO_LIBRARY.forEach(item => {
     libState.library.push({ ...item });
   });
   saveLib();
 
-  clearHistDirect();
+  histState.watchHist.length = 0;
   DEMO_HISTORY.forEach(item => {
     histState.watchHist.push({ ...item });
   });
   saveHist();
+
+  storeEvents.emit('library-changed');
+  storeEvents.emit('history-changed');
 
   bootApp({ ...DEMO_USER });
   toast('🎬 Demo account loaded!');
@@ -648,10 +653,17 @@ storeEvents.on('history-changed', () => {
   refreshView();
 });
 
+storeEvents.on('config-changed', () => {
+  document.body.classList.toggle('layout-grid-only', configState.defaultLayout === 'grid');
+});
+
 /* ─── INITIALIZATION ────────────────────────────────── */
 function init() {
   console.log('[MovieUltra] Starting MovieUltra v9...');
   migrateStorage();
+
+  // Apply layout preference on startup
+  document.body.classList.toggle('layout-grid-only', configState.defaultLayout === 'grid');
 
   const theme = readTheme();
   applyTheme(theme);

@@ -26,7 +26,7 @@ function loadEnv() {
 }
 loadEnv();
 
-const PORT = process.env.PORT || 3000;
+const PORT = process.env.PORT || 5000;
 
 const MIME_TYPES = {
   '.html': 'text/html',
@@ -122,6 +122,15 @@ const server = http.createServer(async (req, res) => {
     res.statusCode = 404;
     res.end('Not Found');
   }
+});
+
+server.on('error', err => {
+  if (err.code === 'EADDRINUSE') {
+    console.error(`[MovieUltra Dev Server] Port ${PORT} is already in use. Stop any other server on that port or set PORT to a different value.`);
+  } else {
+    console.error('[MovieUltra Dev Server] Server error:', err);
+  }
+  process.exit(1);
 });
 
 server.listen(PORT, () => {
