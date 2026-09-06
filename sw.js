@@ -1,4 +1,4 @@
-const CACHE_NAME = 'movieultra-cache-v2.1.0';
+const CACHE_NAME = 'movieultra-cache-v2.1.2';
 const ASSETS = [
   '/',
   '/index.html',
@@ -78,7 +78,12 @@ self.addEventListener('activate', e => {
 });
 
 self.addEventListener('fetch', e => {
-  if (e.request.method !== 'GET' || e.request.url.includes('/api/')) {
+  // Only intercept same-origin GET requests; bypass /api/ routes and all external CDN URLs (gstatic, cdnjs, fonts, etc.)
+  if (
+    e.request.method !== 'GET' ||
+    !e.request.url.startsWith(self.location.origin) ||
+    e.request.url.includes('/api/')
+  ) {
     return;
   }
   

@@ -1,19 +1,16 @@
-import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js';
-import {
-  getAuth,
-  createUserWithEmailAndPassword,
-  signInWithEmailAndPassword,
-  signOut,
-  sendPasswordResetEmail,
-  onAuthStateChanged,
-  updateProfile
-} from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js';
-
 import { firebaseConfigFallback, log } from './config.js';
 
 let app = null;
 let auth = null;
 export let isMockMode = true;
+
+let getAuth = null;
+let createUserWithEmailAndPassword = null;
+let signInWithEmailAndPassword = null;
+let signOut = null;
+let sendPasswordResetEmail = null;
+let onAuthStateChanged = null;
+let updateProfile = null;
 
 // Mock database for users when Firebase is not configured
 const getMockUsers = () => {
@@ -74,12 +71,29 @@ async function loadConfig() {
 
   if (config) {
     try {
+      const [fbAppModule, fbAuthModule] = await Promise.all([
+        import('https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js'),
+        import('https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js')
+      ]);
+
+      const { initializeApp } = fbAppModule;
+      ({
+        getAuth,
+        createUserWithEmailAndPassword,
+        signInWithEmailAndPassword,
+        signOut,
+        sendPasswordResetEmail,
+        onAuthStateChanged,
+        updateProfile
+      } = fbAuthModule);
+
       app = initializeApp(config);
       auth = getAuth(app);
       isMockMode = false;
       log('[MovieUltra] Firebase successfully initialized with keys.');
     } catch (err) {
       console.warn('[MovieUltra] Firebase initialization failed. Falling back to Mock Mode:', err);
+      isMockMode = true;
     }
   } else {
     log('[MovieUltra] Running in Mock Authentication Mode.');
