@@ -9,10 +9,13 @@ export const state = {
   seriesFilter: 'popular',
   seriesPage: 1,
   absoluteMaxPage: Infinity,
-  lastPageLength: 20
+  lastPageLength: 20,
+  isLoading: false
 };
 
 export async function renderSeriesGrid(filter, page = 1) {
+  if (state.isLoading) return;
+
   if (filter) {
     state.seriesFilter = filter;
     state.seriesPage = 1;
@@ -25,6 +28,12 @@ export async function renderSeriesGrid(filter, page = 1) {
   const grid = document.getElementById('seriesGrid');
   if (!grid) return;
   
+  const prevBtn = document.getElementById('seriesPrev');
+  const nextBtn = document.getElementById('seriesNext');
+  if (prevBtn) prevBtn.disabled = true;
+  if (nextBtn) nextBtn.disabled = true;
+
+  state.isLoading = true;
   spinGrid(grid);
   
   try {
@@ -66,19 +75,25 @@ export async function renderSeriesGrid(filter, page = 1) {
     }
   } catch (err) {
     grid.innerHTML = `<p class="placeholder-msg">⚠️ ${h(err.message)}</p>`;
+    syncPager(state.seriesPage);
+  } finally {
+    state.isLoading = false;
+    syncPager(state.seriesPage);
   }
 }
 
 function syncPager(page) {
   const prev = document.getElementById('seriesPrev');
-  if (prev) prev.disabled = page <= 1;
+  if (prev) prev.disabled = page <= 1 || state.isLoading;
 
   const next = document.getElementById('seriesNext');
   if (next) {
-    next.disabled = page >= state.absoluteMaxPage || state.lastPageLength < 20;
+    next.disabled = page >= state.absoluteMaxPage || state.lastPageLength < 20 || state.isLoading;
   }
 
-  const maxDisplay = state.absoluteMaxPage < Infinity ? state.absoluteMaxPage : Math.ceil(page / 50) * 50;
+  // 25-page progressive window: 1..25 -> / 25, 26..50 -> / 50, 51..75 -> / 75
+  const batchEnd = Math.ceil(page / 25) * 25;
+  const maxDisplay = Math.min(state.absoluteMaxPage, batchEnd);
   const info = document.getElementById('seriesPageInfo');
   if (info) info.textContent = `Page ${page} / ${maxDisplay}`;
 }

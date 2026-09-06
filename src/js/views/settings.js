@@ -112,8 +112,8 @@ export function renderSettings() {
       <button class="btn-primary btn-sm" id="st-pwa">Install</button>
     </div>
     <div class="setting-row">
-      <div><div class="setting-lbl">ℹ️ About</div><div class="setting-desc">MovieUltra v2.0.0 · TMDB + Jikan APIs</div></div>
-      <span style="font-size:12px;color:var(--text-muted)">v2.0.0</span>
+      <div><div class="setting-lbl">ℹ️ About</div><div class="setting-desc">MovieUltra v2.1.0 · TMDB + Jikan APIs</div></div>
+      <span style="font-size:12px;color:var(--text-muted)">v2.1.0</span>
     </div>`;
 
   // Dynamic PWA button visibility check
@@ -248,7 +248,7 @@ export function exportExcelPro() {
   ws['E1'].c = [{ t: 'Rating: numeric value 1-10' }];
 
   const instr = [
-    ['MovieUltra v2.0.0 — Library Template'],
+    ['MovieUltra v2.1.0 — Library Template'],
     [''],
     ['Column', 'Format / Options', 'Example'],
     ['S.No', 'Auto-increment number', '1'],

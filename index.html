@@ -3,10 +3,10 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-  <meta name="description" content="MovieUltra — Your premium movie, series & anime tracker">
+  <meta name="description" content="MovieUltra — Your premium movie, series &amp; anime tracker. Discover, explore, track and enjoy cinema.">
   <meta name="theme-color" id="metaTheme" content="#0f0f0f">
   <!-- SEO / OG -->
-  <meta property="og:title" content="MovieUltra — Cinematic Tracker">
+  <meta property="og:title" content="MovieUltra — Cinematic Discovery &amp; Tracker">
   <meta property="og:description" content="Track every movie, series and anime you watch. Build your personal cinematic library.">
   <meta property="og:type" content="website">
   <meta property="og:image" content="https://placehold.co/1200x630/e50914/fff?text=MovieUltra">
@@ -24,6 +24,8 @@
   <link rel="stylesheet" href="src/css/main.css">
 </head>
 <body>
+<!-- SKIP TO CONTENT -->
+<a href="#mainContent" class="skip-link">Skip to main content</a>
 
 <!-- LOGIN SCREEN ───────────────────────────────────── -->
 <div id="loginScreen" role="dialog" aria-modal="true" aria-labelledby="loginTitle">
@@ -60,7 +62,7 @@
 
     <div class="login-divider">or</div>
     <button class="btn-demo" id="demoBtn">Load Demo Account</button>
-    <p class="login-footer">MovieUltra v2.0.0 · Track with style</p>
+    <p class="login-footer">MovieUltra v2.1.0 · Track with style</p>
   </div>
 </div>
 
@@ -74,6 +76,7 @@
     <button class="nav-link" data-view="movies">Movies</button>
     <button class="nav-link" data-view="series">Series</button>
     <button class="nav-link" data-view="anime">Anime</button>
+    <button class="nav-link" data-view="watchlist">⭐ Watchlist</button>
   </div>
   <div class="nav-right">
     <button class="icon-btn" id="searchToggle" aria-label="Search">🔍</button>
@@ -96,6 +99,7 @@
       <div class="sb-usersub" id="sbUsersub">0 titles tracked</div>
     </div>
   </div>
+  <div id="profileSwitcherContainer"></div>
   <nav class="sb-nav" id="sbNav" aria-label="Sidebar links">
     <div class="sb-label">Library</div>
     <button class="sb-link active" data-view="home"><span class="sb-icon">🏠</span>Home</button>
@@ -126,7 +130,15 @@
   <button class="modal-close" id="searchCloseBtn" aria-label="Close search">✕</button>
   <div class="search-bar-wrap">
     <span class="search-icon-fix">🔍</span>
-    <input type="text" id="searchOverlayInput" placeholder="Search movies, series or anime..." autocomplete="off">
+    <input type="text" id="searchOverlayInput" placeholder="Search movies, series, anime or people..." autocomplete="off" aria-label="Search">
+    <kbd class="search-kbd">⌘K</kbd>
+  </div>
+  <div class="search-tabs" role="tablist" aria-label="Search category">
+    <button class="search-tab-btn active" data-tab="all" role="tab" aria-selected="true">All</button>
+    <button class="search-tab-btn" data-tab="movie" role="tab">Movies</button>
+    <button class="search-tab-btn" data-tab="tv" role="tab">Series</button>
+    <button class="search-tab-btn" data-tab="anime" role="tab">Anime</button>
+    <button class="search-tab-btn" data-tab="person" role="tab">People</button>
   </div>
   <div id="overlaySuggestions" class="suggestions" aria-live="polite"></div>
 </div>
@@ -138,18 +150,29 @@
   <section id="view-home" class="view-section active" aria-label="Home Dashboard">
     <!-- HERO -->
     <div class="hero">
+      <!-- Parallax backdrop -->
       <img class="hero-backdrop" id="heroBackdrop" src="" alt="Featured backdrop" loading="eager">
       <div class="hero-vignette" aria-hidden="true"></div>
+      
+      <!-- Hero prev/next controls -->
+      <button class="hero-arrow hero-arrow-prev" id="heroPrevBtn" aria-label="Previous featured title">‹</button>
+      <button class="hero-arrow hero-arrow-next" id="heroNextBtn" aria-label="Next featured title">›</button>
+
       <div class="hero-content">
         <div class="hero-badge">Featured</div>
-        <h2 class="hero-title" id="heroTitle">Featured Title</h2>
+        <h2 class="hero-title" id="heroTitle" aria-live="polite" aria-atomic="true">Featured Title</h2>
+        <div class="hero-genres" id="heroGenres"></div>
         <div class="hero-meta" id="heroMeta"></div>
         <p class="hero-overview" id="heroOverview"></p>
         <div class="hero-actions">
-          <button class="btn-play" id="heroTrailerBtn">▶ Play Trailer</button>
-          <button class="btn-ghost-hero" id="heroAddBtn">＋ Add to Library</button>
+          <button class="btn-play" id="heroWatchBtn">▶ Watch</button>
+          <button class="btn-ghost-hero" id="heroTrailerBtn">🎬 Trailer</button>
+          <button class="btn-ghost-hero" id="heroAddBtn">＋ Watchlist</button>
         </div>
       </div>
+
+      <!-- Carousel dots -->
+      <div class="hero-dots" id="heroDots" aria-label="Hero carousel navigation"></div>
     </div>
 
     <!-- SMART ADD BAR -->
@@ -170,14 +193,25 @@
 
     <!-- HORIZONTAL ROWS -->
     <div class="rows-wrap">
-      <div class="content-row">
+
+      <!-- Continue Watching -->
+      <div class="content-row" id="continueWatchingSection" style="display:none">
         <div class="row-header">
-          <h3 class="row-title">📚 My Collection</h3>
-          <button class="row-more" data-view="watchlist">View All →</button>
+          <h3 class="row-title">▶ Continue Watching</h3>
         </div>
-        <div class="row-track" id="libraryRow" aria-label="My Collection highlights"></div>
+        <div class="row-track continue-watching-track" id="continueWatchingRow" aria-label="Continue watching"></div>
       </div>
 
+      <!-- My Collection -->
+      <div class="content-row">
+        <div class="row-header">
+          <h3 class="row-title">📚 My Watchlist</h3>
+          <button class="row-more" data-view="watchlist">View All →</button>
+        </div>
+        <div class="row-track" id="libraryRow" aria-label="My Watchlist highlights"></div>
+      </div>
+
+      <!-- Recently Watched -->
       <div class="content-row">
         <div class="row-header">
           <h3 class="row-title">🕒 Recently Watched</h3>
@@ -186,14 +220,70 @@
         <div class="row-track" id="historyRow" aria-label="Watch history highlights"></div>
       </div>
 
+      <!-- Trending Today -->
       <div class="content-row">
         <div class="row-header">
-          <h3 class="row-title">🔥 Daily Trending</h3>
-          <button class="row-more" data-view="trending">Explore Grid →</button>
+          <h3 class="row-title">🔥 Trending Today</h3>
+          <button class="row-more" data-view="trending">Explore →</button>
         </div>
         <div class="row-track" id="trendRow" aria-label="Trending hits"></div>
       </div>
 
+      <!-- Popular Movies -->
+      <div class="content-row">
+        <div class="row-header">
+          <h3 class="row-title">🎬 Popular Movies</h3>
+          <button class="row-more" data-view="movies">All Movies →</button>
+        </div>
+        <div class="row-track" id="popularMoviesRow" aria-label="Popular movies"></div>
+      </div>
+
+      <!-- Top Rated (Top 10) -->
+      <div class="content-row">
+        <div class="row-header">
+          <h3 class="row-title">🏆 Top 10 Today</h3>
+          <button class="row-more" data-view="trending">See All →</button>
+        </div>
+        <div class="row-track" id="topRatedRow" aria-label="Top 10 trending today"></div>
+      </div>
+
+      <!-- Now Playing -->
+      <div class="content-row">
+        <div class="row-header">
+          <h3 class="row-title">🎦 Now Playing</h3>
+          <button class="row-more" data-view="movies">See More →</button>
+        </div>
+        <div class="row-track" id="nowPlayingRow" aria-label="Now playing in theaters"></div>
+      </div>
+
+      <!-- Upcoming -->
+      <div class="content-row">
+        <div class="row-header">
+          <h3 class="row-title">📅 Upcoming</h3>
+          <button class="row-more" data-view="movies">See More →</button>
+        </div>
+        <div class="row-track" id="upcomingRow" aria-label="Upcoming movies"></div>
+      </div>
+
+      <!-- Popular Series -->
+      <div class="content-row">
+        <div class="row-header">
+          <h3 class="row-title">📺 Popular Series</h3>
+          <button class="row-more" data-view="series">All Series →</button>
+        </div>
+        <div class="row-track" id="popularSeriesRow" aria-label="Popular TV series"></div>
+      </div>
+
+      <!-- Airing Today -->
+      <div class="content-row">
+        <div class="row-header">
+          <h3 class="row-title">📡 Airing Today</h3>
+          <button class="row-more" data-view="series">See More →</button>
+        </div>
+        <div class="row-track" id="airingTodayRow" aria-label="Airing today on TV"></div>
+      </div>
+
+      <!-- Popular Anime -->
       <div class="content-row">
         <div class="row-header">
           <h3 class="row-title">🌸 Popular Anime</h3>
@@ -201,6 +291,71 @@
         </div>
         <div class="row-track" id="animeHomeRow" aria-label="Anime highlights"></div>
       </div>
+
+      <!-- Personalized rows (Because you watched X) -->
+      <div id="personalizedRowsContainer" style="display:none">
+        <div class="content-row" id="personalizedRow_Action">
+          <div class="row-header">
+            <h3 class="row-title" id="becauseWatchedLabel">🎯 Because You Watched…</h3>
+          </div>
+          <div class="row-track" id="becauseRow_Action" aria-label="Personalized recommendations"></div>
+        </div>
+        <div class="content-row" id="personalizedRow_SciFi">
+          <div class="row-header">
+            <h3 class="row-title">🚀 More Sci-Fi for You</h3>
+          </div>
+          <div class="row-track" id="becauseRow_Sci-Fi" aria-label="Sci-fi recommendations"></div>
+        </div>
+        <div class="content-row" id="personalizedRow_Drama">
+          <div class="row-header">
+            <h3 class="row-title">🎭 Drama You Might Like</h3>
+          </div>
+          <div class="row-track" id="becauseRow_Drama" aria-label="Drama recommendations"></div>
+        </div>
+        <div class="content-row" id="personalizedRow_Thriller">
+          <div class="row-header">
+            <h3 class="row-title">😰 Thrillers Curated for You</h3>
+          </div>
+          <div class="row-track" id="becauseRow_Thriller" aria-label="Thriller recommendations"></div>
+        </div>
+        <div class="content-row" id="personalizedRow_Comedy">
+          <div class="row-header">
+            <h3 class="row-title">😂 Comedy Picks for You</h3>
+          </div>
+          <div class="row-track" id="becauseRow_Comedy" aria-label="Comedy recommendations"></div>
+        </div>
+        <div class="content-row" id="personalizedRow_Fantasy">
+          <div class="row-header">
+            <h3 class="row-title">🧙 Fantasy for You</h3>
+          </div>
+          <div class="row-track" id="becauseRow_Fantasy" aria-label="Fantasy recommendations"></div>
+        </div>
+        <div class="content-row" id="personalizedRow_Horror">
+          <div class="row-header">
+            <h3 class="row-title">😱 Horror Picks</h3>
+          </div>
+          <div class="row-track" id="becauseRow_Horror" aria-label="Horror recommendations"></div>
+        </div>
+        <div class="content-row" id="personalizedRow_Crime">
+          <div class="row-header">
+            <h3 class="row-title">🔍 Crime &amp; Mystery</h3>
+          </div>
+          <div class="row-track" id="becauseRow_Crime" aria-label="Crime recommendations"></div>
+        </div>
+        <div class="content-row" id="personalizedRow_Animation">
+          <div class="row-header">
+            <h3 class="row-title">🎨 Animation for You</h3>
+          </div>
+          <div class="row-track" id="becauseRow_Animation" aria-label="Animation recommendations"></div>
+        </div>
+        <div class="content-row" id="personalizedRow_Romance">
+          <div class="row-header">
+            <h3 class="row-title">💕 Romance Picks</h3>
+          </div>
+          <div class="row-track" id="becauseRow_Romance" aria-label="Romance recommendations"></div>
+        </div>
+      </div>
+
     </div>
   </section>
 
@@ -220,7 +375,7 @@
 
     <div class="pager pager-bottom" id="trendPagerFooter">
       <button class="btn-page" id="trendPrev" disabled>◀ Prev</button>
-      <span class="pager-info" id="trendPageInfo">Page 1 / 10</span>
+      <span class="pager-info" id="trendPageInfo">Page 1 / 25</span>
       <button class="btn-page" id="trendNext">Next ▶</button>
     </div>
   </section>
@@ -239,7 +394,7 @@
     <div class="poster-grid" id="moviesGrid" aria-label="Movies list grid"></div>
     <div class="pager pager-bottom" id="moviesPagerFooter">
       <button class="btn-page" id="moviesPrev" disabled>◀ Prev</button>
-      <span class="pager-info" id="moviesPageInfo">Page 1 / 50</span>
+      <span class="pager-info" id="moviesPageInfo">Page 1 / 25</span>
       <button class="btn-page" id="moviesNext">Next ▶</button>
     </div>
   </section>
@@ -258,7 +413,7 @@
     <div class="poster-grid" id="seriesGrid" aria-label="Web Series list grid"></div>
     <div class="pager pager-bottom" id="seriesPagerFooter">
       <button class="btn-page" id="seriesPrev" disabled>◀ Prev</button>
-      <span class="pager-info" id="seriesPageInfo">Page 1 / 50</span>
+      <span class="pager-info" id="seriesPageInfo">Page 1 / 25</span>
       <button class="btn-page" id="seriesNext">Next ▶</button>
     </div>
   </section>
@@ -282,30 +437,68 @@
     <div class="poster-grid" id="animeGrid" aria-label="Anime list grid"></div>
     <div class="pager pager-bottom" id="animePagerFooter">
       <button class="btn-page" id="animePrev" disabled>◀ Prev</button>
-      <span class="pager-info" id="animePageInfo">Page 1 / 10</span>
+      <span class="pager-info" id="animePageInfo">Page 1 / 25</span>
       <button class="btn-page" id="animeNext">Next ▶</button>
     </div>
   </section>
 
-  <!-- WATCHLIST -->
+  <!-- WATCHLIST & CUSTOM LISTS -->
   <section id="view-watchlist" class="view-section" aria-label="Watchlist">
-    <div class="view-head">
-      <h2>⭐ Watchlist</h2>
-      <div class="filter-bar">
-        <button class="fchip active" data-wf="all">All</button>
-        <button class="fchip" data-wf="movie">Movies</button>
-        <button class="fchip" data-wf="tv">Series</button>
-        <button class="fchip" data-wf="anime">Anime</button>
+
+    <!-- LEFT: List Navigation Sidebar -->
+    <aside class="wl-sidebar" aria-label="Watchlist navigation">
+      <div class="wl-sidebar-header">
+        <span class="wl-sidebar-title">My Lists</span>
+        <button class="btn-ghost btn-sm" id="createListBtn" aria-label="Create new list">＋ New</button>
       </div>
+      <nav class="wl-nav" id="customListsNav" aria-label="Watchlists">
+        <button class="cl-tab active" data-list-id="default">⭐ Default Watchlist</button>
+        <!-- Dynamic custom lists injected by JS -->
+      </nav>
+    </aside>
+
+    <!-- RIGHT: Main Content Area -->
+    <div class="wl-main">
+      <div class="wl-content-header">
+        <h2 class="wl-main-title" id="watchlistMainTitle">⭐ Default Watchlist</h2>
+        <div class="watchlist-controls">
+          <div class="filter-bar" aria-label="Filter by content type">
+            <button class="fchip active" data-wf="all">All</button>
+            <button class="fchip" data-wf="movie">Movies</button>
+            <button class="fchip" data-wf="tv">Series</button>
+            <button class="fchip" data-wf="anime">Anime</button>
+          </div>
+          <div class="filter-bar filter-bar-status" aria-label="Filter by watch status">
+            <button class="fchip active" data-wsf="all">All Status</button>
+            <button class="fchip" data-wsf="Planned">📋 Planned</button>
+            <button class="fchip" data-wsf="Watching">👁️ Watching</button>
+            <button class="fchip" data-wsf="Completed">✅ Completed</button>
+            <button class="fchip fchip-insights" onclick="window.showView && window.showView('analytics')" title="View in Insights">📊 Insights</button>
+          </div>
+          <div class="watchlist-toolbar">
+            <input type="search" id="watchlistSearch" class="watchlist-search" placeholder="Search watchlist…" aria-label="Search watchlist">
+            <select id="watchlistSort" class="watch-select" aria-label="Sort by">
+              <option value="added">Recently Added</option>
+              <option value="title">Title (A–Z)</option>
+              <option value="rating">Rating</option>
+              <option value="year">Year</option>
+            </select>
+          </div>
+        </div>
+      </div>
+      <div class="poster-grid" id="watchlistGrid" aria-label="Watchlist grid"></div>
     </div>
-    <div class="poster-grid" id="watchlistGrid" aria-label="Watchlist list grid"></div>
+
   </section>
 
   <!-- HISTORY -->
   <section id="view-history" class="view-section" aria-label="History">
     <div class="view-head">
       <h2>🕒 Watch History</h2>
-      <button class="btn-danger btn-sm" id="clearHistoryBtn">Clear All</button>
+      <div class="view-head-actions">
+        <button class="btn-ghost btn-sm" id="histGoCompletedBtn" title="View completed list in Watchlist">⭐ View Completed Watchlist →</button>
+        <button class="btn-danger btn-sm" id="clearHistoryBtn">Clear All</button>
+      </div>
     </div>
     <div class="poster-grid" id="historyGrid" aria-label="Watch history list grid"></div>
   </section>
@@ -335,33 +528,74 @@
 
 </main>
 
+<!-- WATCH VIEW ─────────────────────────────────────── -->
+  <section id="view-watch" class="view-section" aria-label="Watch">
+    <div id="watchContent">
+      <div class="watch-error" style="padding-top:120px;text-align:center">
+        <p style="color:var(--text-dim)">Select a title to watch.</p>
+      </div>
+    </div>
+  </section>
+
 <!-- MOVIE DETAIL MODAL ──────────────────────────────── -->
 <div id="movieModal" class="modal-overlay hidden" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
-  <div class="modal-card">
+  <div class="modal-card" id="modalCard" tabindex="-1">
+    <button class="modal-back hidden" id="modalBack" aria-label="Back">← Back</button>
     <button class="modal-close" id="modalClose" aria-label="Close">✕</button>
+
     <div class="modal-hero">
       <img id="modalBackdrop" src="" alt="" class="modal-backdrop-img" loading="lazy">
       <div class="modal-hero-vig" aria-hidden="true"></div>
       <button class="modal-play-btn" id="modalPlayBtn" aria-label="Play trailer">▶</button>
-    </div>
-    <div class="modal-body">
-      <div class="modal-pills" id="modalPills"></div>
-      <h2 class="modal-title" id="modalTitle"></h2>
-      <p class="modal-tagline" id="modalTagline"></p>
-      <p class="modal-overview" id="modalOverview"></p>
-      <div class="modal-genres" id="modalGenres"></div>
-      <!-- Status update row -->
-      <div id="modalStatusRow" class="hidden">
-        <p style="font-size:12px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:8px">Status</p>
-        <div class="status-pills" id="modalStatusPills">
-          <button class="status-pill" data-s="Watching">👁 Watching</button>
-          <button class="status-pill" data-s="Completed">✅ Completed</button>
-          <button class="status-pill" data-s="Planned">📋 Planned</button>
+
+      <div class="modal-hero-info">
+        <img id="modalPoster" class="modal-poster" src="" alt="" loading="lazy">
+        <div class="modal-hero-text">
+          <div class="modal-pills" id="modalPills"></div>
+          <h2 class="modal-title" id="modalTitle"></h2>
+          <p class="modal-original-title hidden" id="modalOriginalTitle"></p>
+          <p class="modal-tagline" id="modalTagline"></p>
+          <div class="modal-genres" id="modalGenres"></div>
+          <div class="modal-foot" id="modalFoot"></div>
         </div>
       </div>
-      <div class="modal-foot" id="modalFoot"></div>
+    </div>
+
+    <div class="modal-body">
+      <div id="modalStatusRow" class="hidden">
+        <p class="modal-section-label">Your Status</p>
+        <div class="status-pills" id="modalStatusPills">
+          <button class="status-pill" data-s="Planned">📋 Planned</button>
+          <button class="status-pill" data-s="Watching">👁 Watching</button>
+          <button class="status-pill" data-s="Completed">✅ Completed</button>
+        </div>
+      </div>
+
+      <p class="modal-overview" id="modalOverview"></p>
+
+      <!-- All rich sections (overview meta, cast, videos, photos, ratings,
+           where to watch, collection, seasons/episodes, similar, recommendations)
+           are injected here by modal.js, built only from real API data. -->
+      <div id="modalDynamic"></div>
     </div>
   </div>
+</div>
+
+<!-- PERSON (CAST) DETAIL MODAL ─────────────────────── -->
+<div id="personModal" class="modal-overlay hidden" role="dialog" aria-modal="true" aria-labelledby="personName">
+  <div class="modal-card person-modal-card" tabindex="-1">
+    <button class="modal-close" id="personClose" aria-label="Close">✕</button>
+    <div id="personContent" class="person-content"></div>
+  </div>
+</div>
+
+<!-- PHOTO LIGHTBOX ─────────────────────────────────── -->
+<div id="lightbox" class="lightbox hidden" role="dialog" aria-modal="true" aria-label="Image viewer">
+  <button class="modal-close" id="lightboxClose" aria-label="Close viewer">✕</button>
+  <button class="lightbox-nav lightbox-prev" id="lightboxPrev" aria-label="Previous image">‹</button>
+  <img id="lightboxImg" src="" alt="" class="lightbox-img">
+  <button class="lightbox-nav lightbox-next" id="lightboxNext" aria-label="Next image">›</button>
+  <div class="lightbox-count" id="lightboxCount"></div>
 </div>
 
 <!-- TRAILER MODAL ────────────────────────────────── -->
@@ -418,12 +652,33 @@
 
 <!-- BOTTOM NAVIGATION (MOBILE) ───────────────────── -->
 <nav class="bottom-nav" aria-label="Bottom navigation">
-  <button class="b-item active" data-view="home"><span>🏠</span>Home</button>
-  <button class="b-item" data-view="trending"><span>🔥</span>Trend</button>
-  <button class="b-item" data-view="watchlist"><span>⭐</span>Saved</button>
-  <button class="b-item" data-view="analytics"><span>📊</span>Stats</button>
-  <button class="b-item" data-view="profile"><span>👤</span>Me</button>
+  <button class="b-item active" data-view="home"><span>🏠</span><span class="b-label">Home</span></button>
+  <button class="b-item" data-view="trending"><span>🔥</span><span class="b-label">Explore</span></button>
+  <button class="b-item" id="searchBottomBtn" aria-label="Search"><span>🔍</span><span class="b-label">Search</span></button>
+  <button class="b-item" data-view="watchlist"><span>⭐</span><span class="b-label">Saved</span></button>
+  <button class="b-item" data-view="profile"><span>👤</span><span class="b-label">Me</span></button>
 </nav>
+
+<!-- LIST ACTION MODAL (Create / Rename / Delete List) ────── -->
+<div id="listActionModal" class="modal-overlay hidden" role="dialog" aria-modal="true" aria-labelledby="listActionTitle">
+  <div class="modal-card list-action-card" tabindex="-1">
+    <div class="list-action-head">
+      <h3 id="listActionTitle">📁 Create New List</h3>
+      <button class="modal-close" id="listActionClose" aria-label="Close dialog">✕</button>
+    </div>
+    <div class="list-action-body">
+      <p id="listActionDesc" class="list-action-desc hidden"></p>
+      <div class="list-action-field" id="listActionField">
+        <label for="listActionInput" id="listActionLabel">List Name</label>
+        <input type="text" id="listActionInput" placeholder="e.g. Marvel Universe, Anime Favorites..." maxlength="40" autocomplete="off">
+      </div>
+      <div class="list-action-buttons">
+        <button class="btn-ghost" id="listActionCancel">Cancel</button>
+        <button class="btn-primary" id="listActionConfirm">Save</button>
+      </div>
+    </div>
+  </div>
+</div>
 
 <div id="toasts" aria-live="polite" aria-atomic="false"></div>
 

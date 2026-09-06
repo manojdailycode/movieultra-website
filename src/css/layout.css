@@ -3,19 +3,34 @@ main {
   min-height: 100vh;
 }
 
+/* ROOT CAUSE FIX — empty black space above video player (desktop + mobile):
+   #view-watch lives OUTSIDE <main> in the DOM. When the watch page is active,
+   all children of <main> are display:none, but <main> keeps min-height:100vh
+   and physically pushes #view-watch down by ~100vh. This collapses main the
+   moment the watch view becomes active. Works automatically on any screen size. */
+body:has(#view-watch.active) main {
+  min-height: 0 !important;
+  overflow: hidden !important;
+}
+
+
 .view-section {
-  display: none;
+  display: none !important;
 }
 
 .view-section.active {
-  display: block;
+  display: block !important;
+}
+
+#view-watchlist.active {
+  display: flex !important;
 }
 
 #view-home {
   padding-top: 0;
 }
 
-.view-section:not(#view-home) {
+.view-section:not(#view-home):not(#view-watchlist) {
   padding-top: calc(var(--nav-h) + 14px);
   padding-bottom: 40px;
 }
@@ -27,12 +42,21 @@ main {
   align-items: flex-start;
   gap: 8px;
   padding: 14px 4% 14px;
+  /* FIX #4: Allow filter-bar child to scroll horizontally without clip */
+  overflow: visible;
 }
 
 .view-head h2 {
   font-size: 20px;
   text-align: left;
   font-weight: 900;
+}
+
+.view-head-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
 }
 
 
@@ -376,6 +400,8 @@ body:has(#view-home.active) .top-nav:not(.solid) .icon-btn {
   border-radius: 26px;
   display: flex;
   padding: 7px 4px;
+  /* FIX #7: Safe area padding for Android gesture nav bar */
+  padding-bottom: max(7px, env(safe-area-inset-bottom));
   box-shadow: var(--shadow);
   z-index: 800;
 }
@@ -439,6 +465,8 @@ body:has(#view-home.active) .top-nav:not(.solid) .icon-btn {
   grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
   gap: 12px;
   padding: 0 3% 20px;
+  align-content: start;
+  align-items: start;
 }
 
 @media (max-width: 340px) {
@@ -469,6 +497,8 @@ body:has(#view-home.active) .top-nav:not(.solid) .icon-btn {
     grid-template-columns: repeat(auto-fill, minmax(155px, 1fr));
     gap: 16px;
     padding: 0 4% 24px;
+    align-content: start;
+    align-items: start;
   }
 
   .bottom-nav {

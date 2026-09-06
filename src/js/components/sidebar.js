@@ -2,7 +2,9 @@
 
 import { state as userState } from '../store/user.js';
 import { state as libState } from '../store/library.js';
+import { renderProfileSwitcherHtml, setActiveProfile, createProfile } from '../store/profiles.js';
 import { h } from '../utils/escape.js';
+import { toast } from './toast.js';
 
 export function openSidebar() {
   const sidebar = document.getElementById('sidebar');
@@ -45,6 +47,43 @@ export function updateSbUser() {
   }
   if (navAvatar) {
     navAvatar.innerHTML = avatarHTML;
+  }
+
+  // Update profile switcher HTML
+  const pContainer = document.getElementById('profileSwitcherContainer');
+  if (pContainer) {
+    pContainer.innerHTML = renderProfileSwitcherHtml();
+    
+    // Bind profile switch events
+    pContainer.querySelectorAll('.profile-switch-btn').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        const id = btn.dataset.profileId;
+        if (id) {
+          setActiveProfile(id);
+          toast('Profile switched', 'ok');
+          closeSidebar();
+          // Reload page to re-initialize stores with new namespace (simplest approach for single-page multi-profile)
+          setTimeout(() => window.location.reload(), 500);
+        }
+      });
+    });
+
+    // Bind add profile event
+    const addBtn = document.getElementById('addProfileBtn');
+    if (addBtn) {
+      addBtn.addEventListener('click', () => {
+        const name = prompt('Enter new profile name:');
+        if (name && name.trim()) {
+          const p = createProfile(name);
+          if (p) {
+            toast('Profile created', 'ok');
+            updateSbUser(); // re-render switcher
+          } else {
+            toast('Cannot create more than 3 profiles', 'err');
+          }
+        }
+      });
+    }
   }
 }
 

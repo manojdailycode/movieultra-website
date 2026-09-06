@@ -4,12 +4,14 @@ export const STORAGE_VERSION = 'v2';
 
 import { log } from '../firebase/config.js';
 
+import { getProfileKey, getActiveProfileId } from '../store/profiles.js';
+
 export const SK = {
-  lib: `mu_lib_${STORAGE_VERSION}`,
-  hist: `mu_hist_${STORAGE_VERSION}`,
-  user: `mu_user_${STORAGE_VERSION}`,
-  theme: 'mu_theme',
-  feedback: 'mu_feedback',
+  get lib() { return getProfileKey(`mu_lib_${STORAGE_VERSION}`, getActiveProfileId()); },
+  get hist() { return getProfileKey(`mu_hist_${STORAGE_VERSION}`, getActiveProfileId()); },
+  get user() { return getProfileKey(`mu_user_${STORAGE_VERSION}`, getActiveProfileId()); },
+  get theme() { return 'mu_theme'; },
+  get feedback() { return 'mu_feedback'; },
 };
 
 export function readStorage(key, fallback) {

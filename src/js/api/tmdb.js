@@ -21,7 +21,7 @@ export function fromTMDB(t, forceType) {
     overview: (t.overview || '').slice(0, 500),
     genre: '',
     platform: '',
-    status: 'Planned',
+    status: '',
     note: '',
     type,
   };
@@ -40,8 +40,23 @@ export async function searchTMDB(query, type = 'movie') {
 }
 
 export async function getDetailsTMDB(type, id) {
-  const data = await fetchTMDB(`/${type}/${id}`, { append_to_response: 'videos' });
+  const data = await fetchTMDB(`/${type}/${id}`, {
+    append_to_response: 'videos,credits,images,recommendations,similar,external_ids,keywords,watch/providers,reviews',
+    include_image_language: 'en,null',
+  });
   return data;
+}
+
+export async function getCollectionTMDB(collectionId) {
+  return fetchTMDB(`/collection/${collectionId}`, {});
+}
+
+export async function getPersonTMDB(personId) {
+  return fetchTMDB(`/person/${personId}`, { append_to_response: 'combined_credits' });
+}
+
+export async function getSeasonTMDB(tvId, seasonNumber) {
+  return fetchTMDB(`/tv/${tvId}/season/${seasonNumber}`, {});
 }
 
 export async function getPopularTMDB(type = 'movie', page = 1) {
@@ -72,4 +87,20 @@ export async function getAiringTodayTMDB(page = 1) {
 export async function getOnTheAirTMDB(page = 1) {
   const data = await fetchTMDB('/tv/on_the_air', { page });
   return data;
+}
+
+export async function getReviewsTMDB(type, id, page = 1) {
+  return fetchTMDB(`/${type}/${id}/reviews`, { page });
+}
+
+export async function searchPeopleTMDB(query) {
+  return fetchTMDB('/search/person', { query });
+}
+
+export async function getGenresTMDB(type = 'movie') {
+  return fetchTMDB(`/genre/${type}/list`, {});
+}
+
+export async function discoverTMDB(type = 'movie', params = {}) {
+  return fetchTMDB(`/discover/${type}`, params);
 }

@@ -1,16 +1,17 @@
+'use strict';
+
+import { setCors, rateLimit, isOriginAllowed } from './lib/security.js';
+
 export default async function handler(req, res) {
-  res.setHeader('Access-Control-Allow-Credentials', true);
-  res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Access-Control-Allow-Methods', 'GET,OPTIONS');
-  res.setHeader(
-    'Access-Control-Allow-Headers',
-    'X-CSRF-Token, X-Requested-With, Accept, Accept-Version, Content-Length, Content-MD5, Content-Type, Date, X-Api-Version'
-  );
-  
-  if (req.method === 'OPTIONS') {
-    res.status(200).end();
-    return;
+  if (setCors(req, res)) return;
+  if (rateLimit(req, res, { max: 30, windowMs: 60000 })) return;
+
+  // Strict origin check: Only serve Firebase credentials to authorized origins
+  if (!isOriginAllowed(req)) {
+    return res.status(403).json({ error: 'Access denied: unauthorized origin' });
   }
+
+  res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate');
 
   return res.status(200).json({
     apiKey: process.env.FIREBASE_API_KEY || '',

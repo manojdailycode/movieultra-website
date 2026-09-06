@@ -1,31 +1,4 @@
 {
-  "version": 2,
-  "builds": [
-    {
-      "src": "api/*.js",
-      "use": "@vercel/node"
-    },
-    {
-      "src": "src/**",
-      "use": "@vercel/static"
-    },
-    {
-      "src": "public/**",
-      "use": "@vercel/static"
-    },
-    {
-      "src": "index.html",
-      "use": "@vercel/static"
-    },
-    {
-      "src": "manifest.json",
-      "use": "@vercel/static"
-    },
-    {
-      "src": "sw.js",
-      "use": "@vercel/static"
-    }
-  ],
   "headers": [
     {
       "source": "/(.*)",
@@ -36,7 +9,7 @@
         },
         {
           "key": "X-Frame-Options",
-          "value": "DENY"
+          "value": "SAMEORIGIN"
         },
         {
           "key": "X-XSS-Protection",
@@ -47,8 +20,16 @@
           "value": "strict-origin-when-cross-origin"
         },
         {
-          "key": "Cache-Control",
-          "value": "public, max-age=3600, s-maxage=3600"
+          "key": "Strict-Transport-Security",
+          "value": "max-age=63072000; includeSubDomains; preload"
+        },
+        {
+          "key": "Permissions-Policy",
+          "value": "camera=(), microphone=(), geolocation=()"
+        },
+        {
+          "key": "Content-Security-Policy",
+          "value": "default-src 'self'; script-src 'self' 'unsafe-inline' https://www.gstatic.com https://apis.google.com https://cdnjs.cloudflare.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: https://image.tmdb.org https://m.media-amazon.com https://lh3.googleusercontent.com https://cdn.myanimelist.net https://s4.anilist.co https://placehold.co; connect-src 'self' https://api.themoviedb.org https://api.jikan.moe https://graphql.anilist.co https://www.omdbapi.com https://api.tvmaze.com https://*.firebaseapp.com https://*.googleapis.com https://*.firebaseio.com; frame-src 'self' https://www.youtube.com https://*.youtube.com https://*.vidlink.pro https://vidlink.pro https://*.vidfast.pro https://vidfast.pro https://*.hexa.su https://hexa.su https://*.vidsrc.cc https://vidsrc.cc https://*.vidsrc.icu https://vidsrc.icu https://*.vidnest.fun https://vidnest.fun https://*.vidhawk.buzz https://vidhawk.buzz; media-src 'self'; object-src 'none';"
         }
       ]
     }
@@ -75,7 +56,11 @@
       "destination": "/api/tvmaze.js"
     },
     {
-       "source": "/((?!api(?:/|$))(?!.*\\..*$).*)",
+      "source": "/api/stream",
+      "destination": "/api/stream.js"
+    },
+    {
+      "source": "/((?!api(?:/|$))(?!.*\\..*$).*)",
       "destination": "/index.html"
     }
   ]

@@ -11,15 +11,18 @@ import {
   logout,
   readTheme
 } from './store/user.js';
+import { initProfiles } from './store/profiles.js';
 
 import {
   state as libState,
   libAdd,
   libRemove,
   libHas,
+  libSetOrUpdate,
   clearLibraryDirect,
   saveLib
 } from './store/library.js';
+import { removeFromList } from './store/customLists.js';
 
 import {
   state as histState,
@@ -31,7 +34,8 @@ import {
 
 import {
   searchTMDB,
-  fromTMDB
+  fromTMDB,
+  searchPeopleTMDB
 } from './api/tmdb.js';
 
 import {
@@ -75,9 +79,21 @@ import {
   renderHistoryRow,
   renderTrendRow,
   renderAnimeHomeRow,
+  renderContinueWatching,
+  renderPopularMoviesRow,
+  renderTopRatedRow,
+  renderNowPlayingRow,
+  renderUpcomingRow,
+  renderPopularSeriesRow,
+  renderAiringTodayRow,
+  renderPersonalizedRows,
   loadHero,
   initHeroListeners
 } from './views/home.js';
+
+import { openWatchView, initWatchViewListeners } from './views/watch.js';
+import { removeProgress, saveProgress, clearAllProgress } from './store/progress.js';
+import { addRecentSearch, getRecentSearches, clearRecentSearches, removeRecentSearch } from './store/recentSearches.js';
 
 import {
   renderTrendingGrid,
@@ -140,18 +156,46 @@ const DEMO_USER = {
 };
 
 const DEMO_LIBRARY = [
-  { id: 238, title: 'The Godfather', year: '1972', type: 'movie', rating: '9.2', genre: 'Crime', platform: 'Netflix', status: 'Completed', note: 'All-time masterpiece', poster: 'https://image.tmdb.org/t/p/w500/3bhkrj58Vtu7enYsLMd5jE4dKEQ.jpg', backdrop: 'https://image.tmdb.org/t/p/w1280/rSPw7tgCH9c6NqICZef4kZjFOQ5.jpg', overview: 'The aging patriarch of an organized crime dynasty.', addedAt: new Date(Date.now() - 8.64e7 * 5).toISOString() },
-  { id: 550, title: 'Fight Club', year: '1999', type: 'movie', rating: '8.8', genre: 'Thriller', platform: 'Amazon', status: 'Completed', note: 'Mind-bending', poster: 'https://image.tmdb.org/t/p/w500/pB8BM7pdSp6B6Ih7QZ4DrQ3PmJK.jpg', backdrop: 'https://image.tmdb.org/t/p/w1280/87hTDiay2N2qWyX4Ds7ybXi9h8I.jpg', overview: 'An insomniac office worker forms an underground fight club.', addedAt: new Date(Date.now() - 8.64e7 * 4).toISOString() },
-  { id: 1396, title: 'Breaking Bad', year: '2008', type: 'tv', rating: '9.5', genre: 'Drama', platform: 'Netflix', status: 'Completed', note: 'Greatest TV show ever', poster: 'https://image.tmdb.org/t/p/w500/ggFHVNu6YYI5L9pCfOacjizRGt.jpg', backdrop: 'https://image.tmdb.org/t/p/w1280/tsRy63Mu5cu8etL1X7ZLyf7UP1M.jpg', overview: 'A chemistry teacher turns to manufacturing meth.', addedAt: new Date(Date.now() - 8.64e7 * 3).toISOString() },
-  { id: 5114, title: 'Attack on Titan', year: '2013', type: 'anime', rating: '9.0', genre: 'Action', platform: 'Crunchyroll', status: 'Completed', note: 'Epic story', poster: 'https://image.tmdb.org/t/p/w500/hTP1DtLGFamjfu8WqjnuQdP1n4i.jpg', backdrop: 'https://image.tmdb.org/t/p/w1280/sHItyNuUQ6DlfhkXi4sNs3rBR3y.jpg', overview: 'A young boy vows to cleanse the earth of titans.', addedAt: new Date(Date.now() - 8.64e7 * 2).toISOString() },
-  { id: 1399, title: 'Game of Thrones', year: '2011', type: 'tv', rating: '9.3', genre: 'Fantasy', platform: 'Disney+', status: 'Completed', note: 'S8 disappoints', poster: 'https://image.tmdb.org/t/p/w500/u3bZgnGQ9T01sWNhyveQz0wH0Hl.jpg', backdrop: 'https://image.tmdb.org/t/p/w1280/suopoADq0k8YZr4dQXcU6pToj6s.jpg', overview: 'Nine noble families fight for Westeros.', addedAt: new Date(Date.now() - 8.64e7).toISOString() },
-  { id: 157336, title: 'Interstellar', year: '2014', type: 'movie', rating: '8.7', genre: 'Sci-Fi', platform: 'Amazon', status: 'Completed', note: 'Best Nolan film', poster: 'https://image.tmdb.org/t/p/w500/gEU2QniE6E77NI6lCU6MxlNBvIx.jpg', backdrop: 'https://image.tmdb.org/t/p/w1280/pbrkL804c8yAv3zBZR4QPEafpAR.jpg', overview: 'Explorers travel through a wormhole.', addedAt: new Date().toISOString() },
+  { id: 238, title: 'The Godfather', year: '1972', type: 'movie', rating: '9.2', genre: 'Crime, Drama', platform: 'Netflix', status: 'Completed', note: 'All-time masterpiece', poster: 'https://image.tmdb.org/t/p/w500/3bhkrj58Vtu7enYsLMd5jE4dKEQ.jpg', backdrop: 'https://image.tmdb.org/t/p/w1280/rSPw7tgCH9c6NqICZef4kZjFOQ5.jpg', overview: 'The aging patriarch of an organized crime dynasty transfers control to his reluctant son.', addedAt: new Date(Date.now() - 8.64e7 * 6).toISOString() },
+  { id: 1399, title: 'Game of Thrones', year: '2011', type: 'tv', rating: '9.3', genre: 'Sci-Fi & Fantasy, Drama', platform: 'Disney+', status: 'Completed', note: 'Epic fantasy saga', poster: 'https://image.tmdb.org/t/p/w500/u3bZgnGQ9T01sWNhyveQz0wH0Hl.jpg', backdrop: 'https://image.tmdb.org/t/p/w1280/suopoADq0k8YZr4dQXcU6pToj6s.jpg', overview: 'Nine noble families fight for control over the lands of Westeros.', addedAt: new Date(Date.now() - 8.64e7 * 5).toISOString() },
+  { id: 1396, title: 'Breaking Bad', year: '2008', type: 'tv', rating: '9.5', genre: 'Drama, Crime', platform: 'Netflix', status: 'Watching', note: 'Season 2 in progress', poster: 'https://image.tmdb.org/t/p/w500/ggFHVNu6YYI5L9pCfOacjizRGt.jpg', backdrop: 'https://image.tmdb.org/t/p/w1280/tsRy63Mu5cu8etL1X7ZLyf7UP1M.jpg', overview: 'A chemistry teacher diagnosed with cancer turns to manufacturing meth.', addedAt: new Date(Date.now() - 8.64e7 * 4).toISOString() },
+  { id: 5114, title: 'Attack on Titan', year: '2013', type: 'anime', rating: '9.0', genre: 'Action, Fantasy', platform: 'Crunchyroll', status: 'Watching', note: 'Episode 8 reached', poster: 'https://image.tmdb.org/t/p/w500/hTP1DtLGFamjfu8WqjnuQdP1n4i.jpg', backdrop: 'https://image.tmdb.org/t/p/w1280/sHItyNuUQ6DlfhkXi4sNs3rBR3y.jpg', overview: 'A young boy vows to cleanse the earth of giant humanoid Titans.', addedAt: new Date(Date.now() - 8.64e7 * 3).toISOString() },
+  { id: 157336, title: 'Interstellar', year: '2014', type: 'movie', rating: '8.7', genre: 'Adventure, Drama, Sci-Fi', platform: 'Amazon', status: 'Planned', note: 'Must watch in IMAX', poster: 'https://image.tmdb.org/t/p/w500/gEU2QniE6E77NI6lCU6MxlNBvIx.jpg', backdrop: 'https://image.tmdb.org/t/p/w1280/pbrkL804c8yAv3zBZR4QPEafpAR.jpg', overview: 'A team of explorers travel through a wormhole in space in an attempt to ensure humanity survival.', addedAt: new Date(Date.now() - 8.64e7 * 2).toISOString() },
+  { id: 550, title: 'Fight Club', year: '1999', type: 'movie', rating: '8.8', genre: 'Drama, Thriller', platform: 'Amazon', status: 'Planned', note: 'Classic mind-bender', poster: 'https://image.tmdb.org/t/p/w500/pB8BM7pdSp6B6Ih7QZ4DrQ3PmJK.jpg', backdrop: 'https://image.tmdb.org/t/p/w1280/87hTDiay2N2qWyX4Ds7ybXi9h8I.jpg', overview: 'An insomniac office worker looking for a way to change his life crosses paths with a soap maker.', addedAt: new Date(Date.now() - 8.64e7).toISOString() },
 ];
 
 const DEMO_HISTORY = [
   { ...DEMO_LIBRARY[0], watchedAt: new Date(Date.now() - 8.64e7 * 4).toISOString() },
-  { ...DEMO_LIBRARY[2], watchedAt: new Date(Date.now() - 8.64e7 * 2).toISOString() },
-  { ...DEMO_LIBRARY[3], watchedAt: new Date(Date.now() - 8.64e7).toISOString() },
+  { ...DEMO_LIBRARY[1], watchedAt: new Date(Date.now() - 8.64e7 * 2).toISOString() },
+];
+
+const DEMO_PROGRESS = [
+  {
+    id: 1396,
+    type: 'tv',
+    percent: 68,
+    currentTime: 2340,
+    duration: 3440,
+    season: 2,
+    episode: 4,
+    episodeTitle: 'Down',
+    title: 'Breaking Bad',
+    poster: 'https://image.tmdb.org/t/p/w500/ggFHVNu6YYI5L9pCfOacjizRGt.jpg',
+    backdrop: 'https://image.tmdb.org/t/p/w1280/tsRy63Mu5cu8etL1X7ZLyf7UP1M.jpg'
+  },
+  {
+    id: 5114,
+    type: 'anime',
+    percent: 42,
+    currentTime: 580,
+    duration: 1420,
+    season: 1,
+    episode: 8,
+    episodeTitle: 'I Can Hear His Heartbeat',
+    title: 'Attack on Titan',
+    poster: 'https://image.tmdb.org/t/p/w500/hTP1DtLGFamjfu8WqjnuQdP1n4i.jpg',
+    backdrop: 'https://image.tmdb.org/t/p/w1280/sHItyNuUQ6DlfhkXi4sNs3rBR3y.jpg'
+  }
 ];
 
 /* ─── ROUTING & VIEWS ────────────────────────────────── */
@@ -171,6 +215,9 @@ export function showView(name) {
     case 'home':
       renderLibraryRow();
       renderHistoryRow();
+      renderContinueWatching();
+      // Personalized rows (async, non-blocking)
+      renderPersonalizedRows();
       break;
     case 'trending':  renderTrendingGrid(trendingState.trendPage); break;
     case 'movies':    renderMoviesGrid();  break;
@@ -197,7 +244,12 @@ function refreshView() {
   }
   renderLibraryRow();
   renderHistoryRow();
+  renderContinueWatching();
 }
+
+// Expose globals needed by watch.js and modal.js
+window.openModal = openModal;
+window._progressStore = { removeProgress };
 
 /* ─── GLOBAL DELEGATED CLICK HANDLERS ───────────────── */
 document.getElementById('mainContent')?.addEventListener('click', e => {
@@ -218,16 +270,91 @@ document.getElementById('mainContent')?.addEventListener('click', e => {
         if (added.msg) toast(added.msg, added.type || 'ok');
       }
       if (action === 'remove') {
-        libRemove(item.id, item.title);
-        toast('Removed from library', 'info');
+        const listId = crd.dataset.listId;
+        if (listId && listId !== 'null') {
+          removeFromList(listId, item.id, item.type);
+          toast('Removed from custom list', 'info');
+        } else {
+          libRemove(item.id, item.title);
+          toast('Removed from library', 'info');
+        }
       }
       if (action === 'watch') {
+        libSetOrUpdate(item, 'Completed');
         histAdd(item);
-        toast(`👁 Marked "${item.title}" as watched`);
+        toast(`✅ Marked "${item.title}" as Completed`, 'ok', {
+          label: 'View Completed →',
+          onClick: () => {
+            if (window.filterWatchlistStatus) window.filterWatchlistStatus('Completed');
+          }
+        });
+        refreshView();
+        return;
       }
       if (action === 'unwatch') {
-        histRemove(item.id);
+        histRemove(item.id, item.type);
         toast('Removed from history', 'info');
+        refreshView();
+        return;
+      }
+      if (action === 'set-status') {
+        const targetStatus = btn.dataset.status || 'Planned';
+        libSetOrUpdate(item, targetStatus);
+        if (targetStatus === 'Completed') {
+          toast(`✅ Marked "${item.title}" as Completed`, 'ok', {
+            label: 'View Completed →',
+            onClick: () => {
+              if (window.filterWatchlistStatus) window.filterWatchlistStatus('Completed');
+            }
+          });
+        } else if (targetStatus === 'Watching') {
+          toast(`👁️ "${item.title}" added to Currently Watching`, 'ok', {
+            label: 'View Watching →',
+            onClick: () => {
+              if (window.filterWatchlistStatus) window.filterWatchlistStatus('Watching');
+            }
+          });
+        } else {
+          toast(`📋 Saved "${item.title}" to Plan to Watch`, 'ok', {
+            label: 'View Watchlist →',
+            onClick: () => {
+              if (window.filterWatchlistStatus) window.filterWatchlistStatus('Planned');
+            }
+          });
+        }
+        refreshView();
+        return;
+      }
+      if (action === 'cycle-status') {
+        const cur = crd.dataset.status || (libState.library.find(i => String(i.id) === String(item.id))?.status) || '';
+        let next = 'Planned';
+        if (cur === 'Planned') next = 'Watching';
+        else if (cur === 'Watching') next = 'Completed';
+        else if (cur === 'Completed') next = 'Planned';
+
+        libSetOrUpdate(item, next);
+        if (next === 'Completed') {
+          toast(`✅ Marked "${item.title}" as Completed`, 'ok', {
+            label: 'View Completed →',
+            onClick: () => {
+              if (window.filterWatchlistStatus) window.filterWatchlistStatus('Completed');
+            }
+          });
+        } else {
+          toast(`Status: "${next}" — ${item.title}`);
+        }
+        refreshView();
+        return;
+      }
+      if (action === 'go-insights') {
+        showView('analytics');
+        return;
+      }
+      if (action === 'watch-now') {
+        openWatchView(item.type || 'movie', item.id);
+      }
+      if (action === 'info') {
+        openModal(item);
       }
       return;
     }
@@ -348,9 +475,22 @@ const searchOverlay = document.getElementById('searchOverlay');
 const overlayInput = document.getElementById('searchOverlayInput');
 const overlaySugg = document.getElementById('overlaySuggestions');
 
-document.getElementById('searchToggle')?.addEventListener('click', () => {
+let searchTab = 'all'; // 'all' | 'movie' | 'tv' | 'anime' | 'person'
+
+function openSearchOverlay() {
   searchOverlay?.classList.remove('hidden');
   overlayInput?.focus();
+  showRecentSearches();
+}
+
+document.getElementById('searchToggle')?.addEventListener('click', openSearchOverlay);
+
+// Keyboard shortcut: Ctrl+K or Cmd+K opens search
+document.addEventListener('keydown', e => {
+  if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
+    e.preventDefault();
+    openSearchOverlay();
+  }
 });
 
 document.getElementById('searchCloseBtn')?.addEventListener('click', closeSearchOverlay);
@@ -365,12 +505,67 @@ function closeSearchOverlay() {
   if (overlaySugg) overlaySugg.innerHTML = '';
 }
 
-const debouncedOverlaySearch = debounce((q) => fetchSuggestions(q, overlaySugg, 'all', true), 320);
+// Search tab switching
+document.querySelectorAll('.search-tab-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    searchTab = btn.dataset.tab || 'all';
+    document.querySelectorAll('.search-tab-btn').forEach(b => b.classList.toggle('active', b === btn));
+    const q = overlayInput?.value.trim() || '';
+    if (q.length >= 2) {
+      fetchSuggestions(q, overlaySugg, searchTab, true);
+    } else {
+      showRecentSearches();
+    }
+  });
+});
+
+function showRecentSearches() {
+  if (!overlaySugg) return;
+  const recents = getRecentSearches();
+  if (!recents.length) {
+    overlaySugg.innerHTML = '';
+    return;
+  }
+  overlaySugg.innerHTML = `
+    <div class="recent-searches-header">
+      <span class="recent-label">Recent Searches</span>
+      <button class="btn-ghost btn-xs" id="clearRecentBtn">Clear all</button>
+    </div>
+    <div class="recent-list">
+      ${recents.map(q => `
+        <div class="recent-item">
+          <button class="recent-search-btn" data-q="${h(q)}">🕒 ${h(q)}</button>
+          <button class="recent-remove-btn" data-q="${h(q)}" aria-label="Remove ${h(q)}">✕</button>
+        </div>`).join('')}
+    </div>`;
+
+  overlaySugg.querySelector('#clearRecentBtn')?.addEventListener('click', () => {
+    clearRecentSearches();
+    overlaySugg.innerHTML = '';
+  });
+  overlaySugg.querySelectorAll('.recent-search-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      if (overlayInput) overlayInput.value = btn.dataset.q;
+      fetchSuggestions(btn.dataset.q, overlaySugg, searchTab, true);
+    });
+  });
+  overlaySugg.querySelectorAll('.recent-remove-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      removeRecentSearch(btn.dataset.q);
+      showRecentSearches();
+    });
+  });
+}
+
+const debouncedOverlaySearch = debounce((q) => {
+  addRecentSearch(q);
+  fetchSuggestions(q, overlaySugg, searchTab, true);
+}, 320);
 
 overlayInput?.addEventListener('input', () => {
   const q = overlayInput.value.trim();
   if (q.length < 2) {
-    if (overlaySugg) overlaySugg.innerHTML = '';
+    showRecentSearches();
     return;
   }
   debouncedOverlaySearch(q);
@@ -382,15 +577,48 @@ async function fetchSuggestions(q, container, mode, isOverlay) {
   
   try {
     let items = [];
+    let personResults = [];
+
     if (mode === 'anime') {
       const d = await searchAnime(q, 6);
       items = (d.data || []).map(fromJikan);
+    } else if (mode === 'person') {
+      const d = await searchPeopleTMDB(q);
+      personResults = (d.results || []).slice(0, 8);
+      items = [];
     } else if (mode === 'all') {
       const d = await searchTMDB(q, 'all');
       items = (d.results || []).filter(r => r.media_type !== 'person').slice(0, 7).map(r => fromTMDB(r));
     } else {
       const d = await searchTMDB(q, mode);
       items = (d.results || []).slice(0, 7).map(r => fromTMDB(r, mode));
+    }
+
+    // Handle person results
+    if (mode === 'person' && personResults.length) {
+      const W185 = 'https://image.tmdb.org/t/p/w185';
+      const NOFACE = 'https://placehold.co/185x278/1c1c1c/555?text=No+Photo';
+      container.innerHTML = personResults.map(p => `
+        <div class="sugg-item sugg-person" data-person-id="${h(String(p.id))}" role="button">
+          <img src="${p.profile_path ? W185 + p.profile_path : NOFACE}" alt="${h(p.name)}" loading="lazy" style="width:38px;height:55px;object-fit:cover;border-radius:5px;background:var(--surface3)">
+          <div class="sugg-text">
+            <div class="sugg-title">${h(p.name)}</div>
+            <div class="sugg-meta">${h(p.known_for_department || '')} · ${(p.known_for || []).slice(0,2).map(k => h(k.title || k.name || '')).join(', ')}</div>
+          </div>
+          <span class="type-pill" style="background:var(--orange);color:#fff">Person</span>
+        </div>`).join('');
+      container.querySelectorAll('.sugg-person').forEach(el => {
+        el.addEventListener('click', () => {
+          import('./components/modal.js').then(m => {
+            const pid = el.dataset.personId;
+            if (pid) {
+              m.openPersonModal?.(pid);
+              closeSearchOverlay();
+            }
+          });
+        });
+      });
+      return;
     }
 
     if (!items.length) {
@@ -586,9 +814,31 @@ document.getElementById('demoBtn')?.addEventListener('click', () => {
   });
   saveHist();
 
+  // Seed demo progress so continue watching has real active cards
+  clearAllProgress();
+  DEMO_PROGRESS.forEach(p => {
+    saveProgress(p.id, p.type, p);
+  });
+
+  initProfiles({ ...DEMO_USER });
   bootApp({ ...DEMO_USER });
+  window._userState = { ...DEMO_USER };
   toast('🎬 Demo account loaded!');
-  
+
+  // Trigger home views fetch
+  Promise.all([
+    loadHero(),
+    renderTrendRow(),
+    renderAnimeHomeRow(),
+    renderContinueWatching(),
+    renderPopularMoviesRow(),
+    renderTopRatedRow(),
+    renderNowPlayingRow(),
+    renderUpcomingRow(),
+    renderPopularSeriesRow(),
+    renderAiringTodayRow(),
+  ]).catch(e => console.error('[MovieUltra] Home rows failed:', e));
+
   refreshView();
   showView('home');
 });
@@ -624,11 +874,14 @@ document.getElementById('sbNav')?.addEventListener('click', e => {
   const btn = e.target.closest('.sb-link[data-view]');
   if (btn) showView(btn.dataset.view);
 });
-document.getElementById('navLinks')?.addEventListener('click', e => {
+document.querySelector('.nav-links')?.addEventListener('click', e => {
   const btn = e.target.closest('.nav-link[data-view]');
   if (btn) showView(btn.dataset.view);
 });
 document.querySelector('.bottom-nav')?.addEventListener('click', e => {
+  // Search button in bottom nav (no data-view)
+  const searchBtn = e.target.closest('#searchBottomBtn');
+  if (searchBtn) { openSearchOverlay(); return; }
   const btn = e.target.closest('.b-item[data-view]');
   if (btn) showView(btn.dataset.view);
 });
@@ -660,6 +913,14 @@ function init() {
   initModalListeners();
   initTrailerListeners();
   initSidebarListeners();
+  initWatchViewListeners();
+
+  // Expose openWatchView globally for watch buttons
+  window.openWatchView = openWatchView;
+  // Expose progress store for continue watching remove button
+  window._progressStore = { removeProgress };
+  // Expose userState globally for match % computation in cards
+  window._userState = userState.currentUser || {};
 
   // Bind individual view layers listeners
   initHeroListeners();
@@ -688,7 +949,14 @@ function init() {
     Promise.all([
       loadHero(),
       renderTrendRow(),
-      renderAnimeHomeRow()
+      renderAnimeHomeRow(),
+      renderContinueWatching(),
+      renderPopularMoviesRow(),
+      renderTopRatedRow(),
+      renderNowPlayingRow(),
+      renderUpcomingRow(),
+      renderPopularSeriesRow(),
+      renderAiringTodayRow(),
     ]).catch(e => console.error('[MovieUltra] Home rows failed:', e));
 
     document.querySelectorAll('[data-view="home"]').forEach(el => el.classList.add('active'));
@@ -709,14 +977,21 @@ function init() {
         favoriteGenre: userState.currentUser?.favoriteGenre || '',
         joinedAt: userState.currentUser?.joinedAt || new Date().toISOString()
       };
-      
-      bootApp(appUser);
+      initProfiles(appUser);
+      bootUserApp(appUser);
       
       // Load home page rows
       Promise.all([
         loadHero(),
         renderTrendRow(),
-        renderAnimeHomeRow()
+        renderAnimeHomeRow(),
+        renderContinueWatching(),
+        renderPopularMoviesRow(),
+        renderTopRatedRow(),
+        renderNowPlayingRow(),
+        renderUpcomingRow(),
+        renderPopularSeriesRow(),
+        renderAiringTodayRow(),
       ]).catch(e => console.error('[MovieUltra] Home rows failed:', e));
       
       showView('home');

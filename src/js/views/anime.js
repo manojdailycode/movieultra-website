@@ -10,10 +10,13 @@ export const state = {
   animeGenreId: null,
   animePage: 1,
   absoluteMaxPage: Infinity,
-  lastPageLength: 24
+  lastPageLength: 24,
+  isLoading: false
 };
 
 export async function renderAnimeGrid(filter, genreId, page = 1) {
+  if (state.isLoading) return;
+
   if (filter) {
     state.animeFilter = filter;
     state.animeGenreId = null;
@@ -33,6 +36,13 @@ export async function renderAnimeGrid(filter, genreId, page = 1) {
   const grid = document.getElementById('animeGrid');
   if (!grid) return;
   
+  // Disable pager buttons during fetch to prevent queue spamming
+  const prevBtn = document.getElementById('animePrev');
+  const nextBtn = document.getElementById('animeNext');
+  if (prevBtn) prevBtn.disabled = true;
+  if (nextBtn) nextBtn.disabled = true;
+
+  state.isLoading = true;
   spinGrid(grid);
   
   try {
@@ -45,8 +55,15 @@ export async function renderAnimeGrid(filter, genreId, page = 1) {
     
     const results = d.data || [];
     state.lastPageLength = results.length;
-    if (d.pagination && typeof d.pagination.last_visible_page === 'number') {
-      state.absoluteMaxPage = d.pagination.last_visible_page;
+
+    if (results.length === 0 && state.animePage > 1) {
+      state.absoluteMaxPage = state.animePage - 1;
+    } else if (d.pagination) {
+      if (d.pagination.has_next_page === false) {
+        state.absoluteMaxPage = state.animePage;
+      } else if (typeof d.pagination.last_visible_page === 'number') {
+        state.absoluteMaxPage = Math.min(d.pagination.last_visible_page, 500);
+      }
     } else if (results.length < 24) {
       state.absoluteMaxPage = state.animePage;
     }
@@ -55,7 +72,7 @@ export async function renderAnimeGrid(filter, genreId, page = 1) {
     
     grid.innerHTML = results.length
       ? results.map(a => card(fromJikan(a), { showAdd: true })).join('')
-      : '<p class="placeholder-msg">No results.</p>';
+      : '<p class="placeholder-msg">No results found.</p>';
 
     // Scroll view wrapper to top gently
     const targetSection = document.getElementById('view-anime');
@@ -64,19 +81,25 @@ export async function renderAnimeGrid(filter, genreId, page = 1) {
     }
   } catch (err) {
     grid.innerHTML = `<p class="placeholder-msg">⚠️ ${h(err.message)}</p>`;
+    syncPager(state.animePage);
+  } finally {
+    state.isLoading = false;
+    syncPager(state.animePage);
   }
 }
 
 function syncPager(page) {
   const prev = document.getElementById('animePrev');
-  if (prev) prev.disabled = page <= 1;
+  if (prev) prev.disabled = page <= 1 || state.isLoading;
 
   const next = document.getElementById('animeNext');
   if (next) {
-    next.disabled = page >= state.absoluteMaxPage || state.lastPageLength < 24;
+    next.disabled = page >= state.absoluteMaxPage || state.lastPageLength < 24 || state.isLoading;
   }
 
-  const maxDisplay = state.absoluteMaxPage < Infinity ? state.absoluteMaxPage : Math.ceil(page / 50) * 50;
+  // 25-page progressive window: 1..25 -> / 25, 26..50 -> / 50, 51..75 -> / 75
+  const batchEnd = Math.ceil(page / 25) * 25;
+  const maxDisplay = Math.min(state.absoluteMaxPage, batchEnd);
   const info = document.getElementById('animePageInfo');
   if (info) info.textContent = `Page ${page} / ${maxDisplay}`;
 }

@@ -3,7 +3,13 @@
 import fs from 'fs';
 import path from 'path';
 import http from 'http';
+import dns from 'dns';
 import { fileURLToPath } from 'url';
+
+// Use resilient public DNS servers for local development to prevent ISP DNS sinkholing of TMDB / Jikan
+try {
+  dns.setServers(['1.1.1.1', '8.8.8.8', '1.0.0.1', '8.8.4.4']);
+} catch { /* ignore in environments that restrict dns.setServers */ }
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -47,51 +53,63 @@ const server = http.createServer(async (req, res) => {
 
   // Serve API endpoints (replicating Vercel Serverless Function behavior locally)
   if (pathname.startsWith('/api/')) {
-    const apiName = pathname.substring(5); // e.g. "firebase-config", "tmdb", "jikan"
-    const apiPath = path.join(__dirname, 'api', `${apiName}.js`);
+    const apiName = pathname.substring(5); // e.g. "firebase-config", "tmdb", "stream"
     
-    if (fs.existsSync(apiPath)) {
-      try {
-        const module = await import(`./api/${apiName}.js`);
-        const handler = module.default;
-        
-        // Mock the Vercel response object
-        const mockRes = {
-          status(code) {
-            res.statusCode = code;
-            return this;
-          },
-          setHeader(name, val) {
-            res.setHeader(name, val);
-            return this;
-          },
-          json(data) {
-            res.setHeader('Content-Type', 'application/json');
-            res.end(JSON.stringify(data));
-            return this;
-          },
-          end(data) {
-            res.end(data);
-            return this;
-          }
-        };
+    // Prevent direct execution of internal helper modules or hidden files
+    if (!apiName.includes('/') && !apiName.startsWith('_')) {
+      const apiPath = path.join(__dirname, 'api', `${apiName}.js`);
+      
+      if (fs.existsSync(apiPath)) {
+        try {
+          const module = await import(`./api/${apiName}.js?t=${Date.now()}`);
+          const handler = module.default;
+          
+          // Mock the Vercel response object
+          const mockRes = {
+            status(code) {
+              res.statusCode = code;
+              return this;
+            },
+            setHeader(name, val) {
+              res.setHeader(name, val);
+              return this;
+            },
+            json(data) {
+              res.setHeader('Content-Type', 'application/json');
+              res.end(JSON.stringify(data));
+              return this;
+            },
+            send(data) {
+              if (!res.getHeader('Content-Type')) {
+                res.setHeader('Content-Type', typeof data === 'object' ? 'application/json' : 'text/html; charset=utf-8');
+              }
+              res.end(typeof data === 'object' ? JSON.stringify(data) : data);
+              return this;
+            },
+            end(data) {
+              res.end(data);
+              return this;
+            }
+          };
 
-        // Mock the Vercel request object
-        const query = Object.fromEntries(parsedUrl.searchParams.entries());
-        const mockReq = {
-          method: req.method,
-          headers: req.headers,
-          query: query,
-        };
+          // Mock the Vercel request object
+          const query = Object.fromEntries(parsedUrl.searchParams.entries());
+          const mockReq = {
+            method: req.method,
+            headers: req.headers,
+            query: query,
+            socket: req.socket
+          };
 
-        await handler(mockReq, mockRes);
-        return;
-      } catch (err) {
-        console.error(`Error in API handler /api/${apiName}:`, err);
-        res.statusCode = 500;
-        res.setHeader('Content-Type', 'application/json');
-        res.end(JSON.stringify({ error: err.message }));
-        return;
+          await handler(mockReq, mockRes);
+          return;
+        } catch (err) {
+          console.error(`Error in API handler /api/${apiName}:`, err);
+          res.statusCode = 500;
+          res.setHeader('Content-Type', 'application/json');
+          res.end(JSON.stringify({ error: err.message }));
+          return;
+        }
       }
     }
   }

@@ -66,10 +66,10 @@ export function renderProfile() {
     <div class="prof-section">
       <div class="prof-section-title">Stats</div>
       <div class="prof-stats-main">
-        <div class="pstat accent-red"><div class="pstat-icon">📚</div><div class="pstat-num">${total}</div><div class="pstat-lbl">Library</div></div>
-        <div class="pstat accent-green"><div class="pstat-icon">✅</div><div class="pstat-num">${watchHist.length}</div><div class="pstat-lbl">Watched</div></div>
-        <div class="pstat accent-gold"><div class="pstat-icon">⏳</div><div class="pstat-num">${toWatch}</div><div class="pstat-lbl">To Watch</div></div>
-        <div class="pstat accent-blue"><div class="pstat-icon">⭐</div><div class="pstat-num">${rated}</div><div class="pstat-lbl">Rated</div></div>
+        <div class="pstat accent-red pstat-clickable" id="profStatLib" role="button" tabindex="0" title="Click to view All Saved in Watchlist"><div class="pstat-icon">📚</div><div class="pstat-num">${total}</div><div class="pstat-lbl">Library</div></div>
+        <div class="pstat accent-green pstat-clickable" id="profStatWatched" role="button" tabindex="0" title="Click to view Completed titles"><div class="pstat-icon">✅</div><div class="pstat-num">${watchHist.length}</div><div class="pstat-lbl">Watched</div></div>
+        <div class="pstat accent-gold pstat-clickable" id="profStatPlanned" role="button" tabindex="0" title="Click to view Plan to Watch titles"><div class="pstat-icon">⏳</div><div class="pstat-num">${toWatch}</div><div class="pstat-lbl">To Watch</div></div>
+        <div class="pstat accent-blue pstat-clickable" id="profStatRated" role="button" tabindex="0" title="Click to view Insights"><div class="pstat-icon">⭐</div><div class="pstat-num">${rated}</div><div class="pstat-lbl">Rated</div></div>
       </div>
       <div class="prof-stats-type">
         <div class="pstat"><div class="pstat-icon">🎬</div><div class="pstat-num">${watchedM}</div><div class="pstat-lbl">Movies</div></div>
@@ -109,6 +109,22 @@ export function renderProfile() {
 
   document.getElementById('openEditProfile')?.addEventListener('click', openEditProfile);
   document.getElementById('profAvClick')?.addEventListener('click', openEditProfile);
+
+  document.getElementById('profStatLib')?.addEventListener('click', () => {
+    if (window.filterWatchlistStatus) window.filterWatchlistStatus('all');
+    else if (window.showView) window.showView('watchlist');
+  });
+  document.getElementById('profStatWatched')?.addEventListener('click', () => {
+    if (window.filterWatchlistStatus) window.filterWatchlistStatus('Completed');
+    else if (window.showView) window.showView('history');
+  });
+  document.getElementById('profStatPlanned')?.addEventListener('click', () => {
+    if (window.filterWatchlistStatus) window.filterWatchlistStatus('Planned');
+    else if (window.showView) window.showView('watchlist');
+  });
+  document.getElementById('profStatRated')?.addEventListener('click', () => {
+    if (window.showView) window.showView('analytics');
+  });
 
   document.getElementById('profGoHistory')?.addEventListener('click', () => {
     if (window.showView) window.showView('history');

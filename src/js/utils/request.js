@@ -60,32 +60,19 @@ export async function fetchTMDB(path, params = {}) {
   proxyUrl.searchParams.set('path', path);
   Object.entries(params).forEach(([k, v]) => proxyUrl.searchParams.set(k, v));
 
-  try {
-    const res = await fetch(proxyUrl.toString());
-    if (res.status === 404) {
-      throw new Error('Proxy returned 404');
-    }
-    if (!res.ok) {
-      throw new Error(`Proxy returned status ${res.status}`);
-    }
-    const data = await res.json();
-    apiCache[cacheKey] = data;
-    return data;
-  } catch (proxyError) {
-    console.warn('[MovieUltra] TMDB Proxy failed, falling back to direct API:', proxyError.message);
-    
-    const directUrl = new URL(`https://api.themoviedb.org/3${path}`);
-    directUrl.searchParams.set('api_key', 'cf73f47a609d2e71e31813358f64cb2f');
-    Object.entries(params).forEach(([k, v]) => directUrl.searchParams.set(k, v));
-
-    const res = await fetch(directUrl.toString());
-    if (!res.ok) {
-      throw new Error(`TMDB Direct API ${res.status}: ${res.statusText}`);
-    }
-    const data = await res.json();
-    apiCache[cacheKey] = data;
-    return data;
+  const res = await fetch(proxyUrl.toString());
+  if (!res.ok) {
+    let errorDetail = `TMDB Proxy error: ${res.status}`;
+    try {
+      const errJson = await res.json();
+      if (errJson.error) errorDetail = errJson.error;
+    } catch { /* ignore */ }
+    throw new Error(errorDetail);
   }
+
+  const data = await res.json();
+  apiCache[cacheKey] = data;
+  return data;
 }
 
 export async function fetchJikan(path) {
@@ -97,9 +84,6 @@ export async function fetchJikan(path) {
 
   try {
     const res = await jikanQueue.enqueue(proxyUrl.toString());
-    if (res.status === 404) {
-      throw new Error('Proxy returned 404');
-    }
     if (!res.ok) {
       throw new Error(`Proxy returned status ${res.status}`);
     }

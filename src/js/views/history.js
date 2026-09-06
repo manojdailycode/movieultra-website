@@ -13,6 +13,11 @@ export function renderHistoryGrid() {
 }
 
 export function initHistoryListeners() {
+  document.getElementById('histGoCompletedBtn')?.addEventListener('click', () => {
+    if (window.filterWatchlistStatus) window.filterWatchlistStatus('Completed');
+    else if (window.showView) window.showView('watchlist');
+  });
+
   document.getElementById('clearHistoryBtn')?.addEventListener('click', () => {
     if (!confirm('Clear all watch history?')) return;
     histClearDirect();

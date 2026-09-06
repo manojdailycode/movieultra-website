@@ -10,7 +10,8 @@ export const state = {
   trendPage: 1,
   trendFilter: 'all',
   absoluteMaxPage: Infinity,
-  lastPageLength: 20
+  lastPageLength: 20,
+  isLoading: false
 };
 
 const trendCache = {};
@@ -24,8 +25,12 @@ export async function getTrending(page = 1, filter = 'all') {
   if (filter === 'anime') {
     const d = await getTopAnime('bypopularity', page, 20);
     results = (d.data || []).map(fromJikan);
-    if (d.pagination && typeof d.pagination.last_visible_page === 'number') {
-      totalPages = d.pagination.last_visible_page;
+    if (d.pagination) {
+      if (d.pagination.has_next_page === false) {
+        totalPages = page;
+      } else if (typeof d.pagination.last_visible_page === 'number') {
+        totalPages = Math.min(d.pagination.last_visible_page, 500);
+      }
     }
   } else {
     const d = await getTrendingTMDB(page, filter);
@@ -41,12 +46,20 @@ export async function getTrending(page = 1, filter = 'all') {
 }
 
 export async function renderTrendingGrid(page = 1) {
+  if (state.isLoading) return;
+
   page = Math.max(1, Math.min(page, state.absoluteMaxPage));
   state.trendPage = page;
   
   const grid = document.getElementById('trendingGrid');
   if (!grid) return;
   
+  const prevBtn = document.getElementById('trendPrev');
+  const nextBtn = document.getElementById('trendNext');
+  if (prevBtn) prevBtn.disabled = true;
+  if (nextBtn) nextBtn.disabled = true;
+
+  state.isLoading = true;
   spinGrid(grid);
   
   try {
@@ -70,16 +83,20 @@ export async function renderTrendingGrid(page = 1) {
     }
   } catch (err) {
     grid.innerHTML = `<p class="placeholder-msg">⚠️ ${h(err.message)}</p>`;
+    syncPager(page);
+  } finally {
+    state.isLoading = false;
+    syncPager(page);
   }
 }
 
 function syncPager(page) {
   const prev = document.getElementById('trendPrev');
-  if (prev) prev.disabled = page <= 1;
+  if (prev) prev.disabled = page <= 1 || state.isLoading;
 
   const next = document.getElementById('trendNext');
   if (next) {
-    next.disabled = page >= state.absoluteMaxPage || state.lastPageLength < 20;
+    next.disabled = page >= state.absoluteMaxPage || state.lastPageLength < 20 || state.isLoading;
   }
 
   const maxDisplay = state.absoluteMaxPage < Infinity ? state.absoluteMaxPage : Math.ceil(page / 10) * 10;

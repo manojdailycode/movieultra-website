@@ -1,20 +1,29 @@
+'use strict';
+
+import { setCors, rateLimit, validatePath } from './lib/security.js';
+
+const ALLOWED_JIKAN_PATHS = [
+  '/anime',
+  '/top/',
+  '/seasons',
+  '/genres',
+  '/characters',
+  '/people'
+];
+
 export default async function handler(req, res) {
-  res.setHeader('Access-Control-Allow-Credentials', true);
-  res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Access-Control-Allow-Methods', 'GET,OPTIONS,PATCH,DELETE,POST,PUT');
-  res.setHeader(
-    'Access-Control-Allow-Headers',
-    'X-CSRF-Token, X-Requested-With, Accept, Accept-Version, Content-Length, Content-MD5, Content-Type, Date, X-Api-Version'
-  );
-  
-  if (req.method === 'OPTIONS') {
-    res.status(200).end();
-    return;
-  }
+  // CORS & Preflight handling
+  if (setCors(req, res)) return;
+
+  // Rate limiting (60 requests per minute per IP)
+  if (rateLimit(req, res, { max: 60, windowMs: 60000 })) return;
 
   const { path } = req.query;
-  if (!path) {
-    return res.status(400).json({ error: 'Missing path parameter' });
+
+  // Path validation & whitelisting
+  const pathValidation = validatePath(path, ALLOWED_JIKAN_PATHS);
+  if (!pathValidation.valid) {
+    return res.status(400).json({ error: pathValidation.error });
   }
 
   const url = `https://api.jikan.moe/v4${path}`;
